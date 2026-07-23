@@ -1,0 +1,16 @@
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.pyc
+
+# Audio is intentionally NOT tracked (copyrighted, multi-GB).
+*.flac
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.ogg

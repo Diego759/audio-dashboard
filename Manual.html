@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hemi-Sync — A Visual Manual</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root{
+    --bg:#0a0a1a; --panel:rgba(255,255,255,.04); --border:rgba(160,160,255,.16);
+    --text:#e8e8f5; --muted:#9a9ac0; --accent:#8b7bf0; --accent2:#5ad1e0; --gold:#e8c06a;
+    --delta:#6a5adf; --theta:#8b7bf0; --alpha:#5ad1e0; --beta:#e8c06a; --gamma:#e88a6a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Segoe UI',system-ui,sans-serif;color:var(--text);line-height:1.7;
+    background:
+      radial-gradient(1200px 800px at 20% -10%,#241a4a 0%,transparent 55%),
+      radial-gradient(1000px 700px at 100% 0%,#0e2a3a 0%,transparent 50%),
+      var(--bg);
+    background-attachment:fixed;padding-bottom:80px;
+  }
+  a{color:var(--accent2)}
+  .wrap{max-width:900px;margin:0 auto;padding:0 22px}
+  header{padding:52px 0 10px;text-align:center}
+  header h1{
+    font-size:clamp(30px,5vw,44px);font-weight:700;
+    background:linear-gradient(90deg,#b9a8ff,#7be0ec);-webkit-background-clip:text;
+    background-clip:text;color:transparent;margin-bottom:10px;
+  }
+  header p{color:var(--muted);max-width:640px;margin:0 auto}
+  .backlink{display:inline-block;margin-top:14px;padding:7px 18px;border-radius:20px;
+    border:1px solid var(--border);background:var(--panel);color:var(--muted);
+    text-decoration:none;font-size:13px}
+  .backlink:hover{color:var(--text);background:rgba(255,255,255,.08)}
+  section{margin:52px 0}
+  h2{font-size:24px;font-weight:650;margin-bottom:6px;display:flex;align-items:center;gap:12px}
+  h2 .num{
+    display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;
+    border-radius:10px;background:linear-gradient(135deg,var(--accent),#5a4bd0);
+    font-size:16px;flex-shrink:0;
+  }
+  .lead{color:var(--muted);margin-bottom:18px}
+  p{margin-bottom:12px}
+  .card{
+    background:linear-gradient(165deg,rgba(139,123,240,.07),rgba(10,10,26,.3));
+    border:1px solid var(--border);border-radius:16px;padding:22px;margin:18px 0;
+  }
+  figure{margin:20px 0}
+  figure img{width:100%;border-radius:12px;border:1px solid var(--border)}
+  figcaption{font-size:12.5px;color:var(--muted);margin-top:8px;text-align:center}
+  .hl{color:var(--gold);font-weight:600}
+  .hv{color:var(--accent2);font-weight:600}
+  .hp{color:#c9bcff;font-weight:600}
+  code{background:rgba(255,255,255,.08);padding:1px 7px;border-radius:6px;font-size:.92em}
+  /* band ladder */
+  .band{display:grid;grid-template-columns:110px 90px 1fr;gap:0 16px;align-items:center;
+    padding:14px 18px;border-radius:13px;margin:9px 0;border:1px solid var(--border)}
+  .band .sym{font-size:30px;font-weight:700;text-align:center}
+  .band .rng{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .band .nm{font-size:16px;font-weight:650}
+  .band .desc{grid-column:1/4;color:var(--muted);font-size:13.5px;margin-top:6px}
+  .band .gw{grid-column:1/4;font-size:12.5px;margin-top:4px;color:var(--text)}
+  .band .gw b{color:var(--gold)}
+  .b-delta{background:linear-gradient(90deg,rgba(106,90,223,.22),transparent)}
+  .b-delta .sym,.b-delta .nm{color:#b9a8ff}
+  .b-theta{background:linear-gradient(90deg,rgba(139,123,240,.20),transparent)}
+  .b-theta .sym,.b-theta .nm{color:#c9bcff}
+  .b-alpha{background:linear-gradient(90deg,rgba(90,209,224,.18),transparent)}
+  .b-alpha .sym,.b-alpha .nm{color:#7be0ec}
+  .b-beta{background:linear-gradient(90deg,rgba(232,192,106,.18),transparent)}
+  .b-beta .sym,.b-beta .nm{color:#f0d089}
+  .b-gamma{background:linear-gradient(90deg,rgba(232,138,106,.18),transparent)}
+  .b-gamma .sym,.b-gamma .nm{color:#f0a889}
+  /* demo */
+  .demo{border-color:rgba(90,209,224,.4)}
+  .demo h3{color:var(--accent2);margin-bottom:6px}
+  .demo .warn{color:var(--gold);font-size:13px;margin-bottom:16px}
+  .demo .row{display:flex;align-items:center;gap:14px;margin:12px 0;flex-wrap:wrap}
+  .demo label{width:150px;color:var(--muted);font-size:13.5px}
+  .demo input[type=range]{flex:1;min-width:160px;accent-color:var(--accent)}
+  .demo .val{width:110px;font-variant-numeric:tabular-nums;color:var(--text);font-size:14px}
+  .demo .bandbtns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+  .demo .bandbtns button{
+    padding:6px 14px;border-radius:16px;border:1px solid var(--border);cursor:pointer;
+    background:var(--panel);color:var(--muted);font-size:12.5px;transition:.15s;
+  }
+  .demo .bandbtns button:hover{color:var(--text);background:rgba(255,255,255,.09)}
+  #demo-toggle{
+    padding:11px 34px;border-radius:26px;border:1px solid rgba(160,160,255,.4);cursor:pointer;
+    background:linear-gradient(135deg,#8b7bf0,#5a4bd0);color:#fff;font-size:15px;font-weight:600;
+    box-shadow:0 4px 20px rgba(120,100,240,.35);transition:.15s;
+  }
+  #demo-toggle:hover{filter:brightness(1.12)}
+  #demo-toggle.playing{background:linear-gradient(135deg,#d06080,#a04060)}
+  .earbox{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+  .ear{flex:1;min-width:200px;padding:12px 16px;border-radius:12px;border:1px solid var(--border);
+    text-align:center;font-size:13.5px}
+  .ear b{font-size:19px;display:block;margin-top:2px;font-variant-numeric:tabular-nums}
+  .ear.L{border-color:rgba(185,168,255,.45)} .ear.L b{color:var(--accent)}
+  .ear.R{border-color:rgba(90,209,224,.45)} .ear.R b{color:var(--accent2)}
+  .ear.B{border-color:rgba(232,192,106,.5)} .ear.B b{color:var(--gold)}
+  .footer{margin-top:60px;text-align:center;color:var(--muted);font-size:12.5px}
+  svg text{font-family:'Segoe UI',system-ui,sans-serif}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Hemi-Sync · A Visual Manual</h1>
+  <p>How the Gateway tapes steer your brain with sound — explained with real measurements
+     from <em>your own</em> recordings.</p>
+  <a class="backlink" href="index.html">← back to the Tape Library</a>
+</header>
+
+<!-- ══════════ 1. THE CORE IDEA ══════════ -->
+<section>
+  <h2><span class="num">1</span> The core trick: two ears, two tones, one illusion</h2>
+  <p class="lead">Hemi-Sync (hemispheric synchronization) is built on the <b>binaural beat</b> —
+  an auditory illusion discovered in 1839 and turned into a training tool by Robert Monroe.</p>
+
+  <div class="card">
+    <svg viewBox="0 0 860 300" width="100%" role="img" aria-label="Binaural beat diagram">
+      <!-- left ear -->
+      <circle cx="140" cy="150" r="58" fill="rgba(185,168,255,.12)" stroke="#b9a8ff" stroke-width="1.5"/>
+      <text x="140" y="143" fill="#b9a8ff" font-size="15" text-anchor="middle" font-weight="600">LEFT ear</text>
+      <text x="140" y="168" fill="#e8e8f5" font-size="20" text-anchor="middle" font-weight="700">100 Hz</text>
+      <!-- right ear -->
+      <circle cx="720" cy="150" r="58" fill="rgba(90,209,224,.12)" stroke="#5ad1e0" stroke-width="1.5"/>
+      <text x="720" y="143" fill="#5ad1e0" font-size="15" text-anchor="middle" font-weight="600">RIGHT ear</text>
+      <text x="720" y="168" fill="#e8e8f5" font-size="20" text-anchor="middle" font-weight="700">104 Hz</text>
+      <!-- brain -->
+      <ellipse cx="430" cy="150" rx="105" ry="72" fill="rgba(232,192,106,.10)" stroke="#e8c06a" stroke-width="1.5"/>
+      <path d="M430 84 v132" stroke="#e8c06a" stroke-width="1" stroke-dasharray="4 5" opacity=".6"/>
+      <text x="430" y="128" fill="#e8c06a" font-size="14" text-anchor="middle" font-weight="600">the BRAIN</text>
+      <text x="430" y="152" fill="#e8e8f5" font-size="13.5" text-anchor="middle">compares both ears and</text>
+      <text x="430" y="172" fill="#e8e8f5" font-size="13.5" text-anchor="middle">"hears" the difference:</text>
+      <text x="430" y="200" fill="#e8c06a" font-size="22" text-anchor="middle" font-weight="700">104 − 100 = 4 Hz</text>
+      <!-- arrows -->
+      <path d="M203 150 h115" stroke="#b9a8ff" stroke-width="2" fill="none" marker-end="url(#a1)"/>
+      <path d="M657 150 h-115" stroke="#5ad1e0" stroke-width="2" fill="none" marker-end="url(#a2)"/>
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#b9a8ff" stroke-width="1.6"/></marker>
+        <marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#5ad1e0" stroke-width="1.6"/></marker>
+      </defs>
+      <text x="430" y="272" fill="#9a9ac0" font-size="13" text-anchor="middle">That 4 Hz pulse exists ONLY inside your head — no speaker produces it. Your brain tends to fall into step with it ("entrainment").</text>
+    </svg>
+  </div>
+
+  <p>The <span class="hl">4 Hz doesn't exist in the room</span>. Each ear hears only its own steady tone —
+  which is why <b>stereo headphones are mandatory</b>. Your brainstem compares both ears and generates the
+  difference internally. Because 4 Hz is also the speed of <b>theta brainwaves</b>, your brain tends to
+  drift toward that rhythm — this "frequency-following response" is the entire mechanism behind every
+  Gateway tape.</p>
+</section>
+
+<!-- ══════════ 2. CARRIER vs BEAT ══════════ -->
+<section>
+  <h2><span class="num">2</span> Carrier (Hz) vs Beat (Hz) — the two numbers that matter</h2>
+  <p class="lead">Every Hemi-Sync tone pair is described by two frequencies with very different jobs.</p>
+
+  <div class="card">
+    <p>🚚 The <span class="hp">CARRIER</span> is the tone you actually <em>hear</em> — the pitch, like a
+    musical note (100 Hz ≈ a low hum, 400 Hz ≈ near middle A). It's the <b>delivery truck</b>.
+    Its exact value matters little; it just has to be comfortable and audible.</p>
+    <p>📦 The <span class="hl">BEAT</span> is the small <em>difference</em> between the left-ear and
+    right-ear carriers. It's the <b>cargo</b> — the actual brainwave frequency being delivered
+    (0.5–30 Hz, far too low to hear as a tone directly, which is exactly why the carrier trick is needed).</p>
+  </div>
+
+  <figure>
+    <img src="_manual/fig1_carriers.png" alt="Left vs right ear spectrum showing carrier offset">
+    <figcaption>Real measurement from tape #008: each panel shows one carrier. The violet peak
+    (left ear) and cyan peak (right ear) are deliberately offset — that gold gap <b>Δ is the beat</b>.
+    Same tape, two simultaneous carriers delivering two different beats (1.5 Hz δ + 4 Hz θ).</figcaption>
+  </figure>
+
+  <p>Monroe stacks <span class="hv">several carriers at once</span> (100, 200, 300, 500 Hz…), each carrying
+  its own beat. That's how one tape can hold your body in delta sleep (1.5 Hz) while nudging your mind
+  into alert theta (4 Hz) — the famous <b>"mind awake, body asleep"</b> of Focus 10.</p>
+
+  <figure>
+    <img src="_manual/fig2_beating.png" alt="Two sine waves and their beating sum">
+    <figcaption>What the illusion looks like as waveforms: two steady tones (top, middle) —
+    combined by the brain, their sum pulses at the difference rate (gold envelope = the 4 Hz beat).</figcaption>
+  </figure>
+</section>
+
+<!-- ══════════ 3. BRAINWAVE BANDS ══════════ -->
+<section>
+  <h2><span class="num">3</span> The brainwave bands: δ θ α β γ</h2>
+  <p class="lead">Your brain always oscillates at some dominant rhythm. The bands are just names for
+  speed ranges — slower = deeper. The Gateway tapes pick beats to pull you toward a target band.</p>
+
+  <div class="band b-gamma">
+    <span class="sym">γ</span><span class="rng">30–100 Hz</span><span class="nm">Gamma</span>
+    <span class="desc">Peak coherence, moments of insight, "everything clicks". Rare and brief.</span>
+    <span class="gw"><b>In your tapes:</b> almost never used — too intense for meditation work.</span>
+  </div>
+  <div class="band b-beta">
+    <span class="sym">β</span><span class="rng">14–30 Hz</span><span class="nm">Beta</span>
+    <span class="desc">Normal waking mind: thinking, analyzing, problem-solving. High beta = stress/wired.</span>
+    <span class="gw"><b>In your tapes:</b> Mind Food <i>Concentration</i> is a pure 16/20/24 Hz beta stack;
+    Journeys OOB Conditions A/B use beta to keep the mind bright while the body settles; Wave VI–VII add
+    16 Hz layers for "alert" phases.</span>
+  </div>
+  <div class="band b-alpha">
+    <span class="sym">α</span><span class="rng">8–14 Hz</span><span class="nm">Alpha</span>
+    <span class="desc">Relaxed wakefulness — eyes closed, calm, receptive. The "idle" of a healthy brain.
+    Bridge between waking and meditative states.</span>
+    <span class="gw"><b>In your tapes:</b> the 10 Hz layer that appears mid-session in Wave II (#008–012)
+    and in <i>Manifesting</i>; used to enter sessions and to return gently.</span>
+  </div>
+  <div class="band b-theta">
+    <span class="sym">θ</span><span class="rng">4–8 Hz</span><span class="nm">Theta</span>
+    <span class="desc">Deep meditation, hypnagogic imagery, vivid visualization, the dream doorway.
+    Where most "Gateway phenomena" happen.</span>
+    <span class="gw"><b>In your tapes:</b> the workhorse — the 4 Hz beat is in nearly every exercise
+    (Focus 10/12 training); Lucid Dreaming ramps to 6–8 Hz at minute ~70 to catch the REM window.</span>
+  </div>
+  <div class="band b-delta">
+    <span class="sym">δ</span><span class="rng">0.5–4 Hz</span><span class="nm">Delta</span>
+    <span class="desc">Deep dreamless sleep, physical recovery, unconscious repair. The body's
+    maintenance mode.</span>
+    <span class="gw"><b>In your tapes:</b> the constant 1.5 Hz "body asleep" anchor under everything;
+    <i>Sound Sleeper</i> is pure delta; <i>Transcendence</i> goes to 0.5–0.75 Hz — the deepest in your library.</span>
+  </div>
+
+  <p style="margin-top:16px">A typical Gateway session is a <span class="hv">guided descent and return</span>:
+  <b>β → α → θ (→ δ)</b> on the way in, then back up <b>→ α → β</b> at the wake-up count. On the
+  frequency charts you can literally watch this staircase.</p>
+</section>
+
+<!-- ══════════ 4. SPECTROGRAM ══════════ -->
+<section>
+  <h2><span class="num">4</span> Reading a spectrogram</h2>
+  <p class="lead">A spectrogram is a photograph of sound: time runs left→right, pitch runs bottom→top,
+  and brightness = loudness. Steady tones become horizontal lines.</p>
+
+  <figure>
+    <img src="_manual/fig3_spectrogram.png" alt="Annotated real spectrogram of tape 008">
+    <figcaption>Tape #008, right ear. The sharp <b>horizontal lines</b> are the Hemi-Sync carriers
+    (100 / 200 / 500 Hz) switching on as the session deepens. The <b>diffuse orange glow</b> is the ocean
+    surf / pink noise bed. The narrator's voice appears as brief vertical smears.</figcaption>
+  </figure>
+
+  <div class="card">
+    <p><b>How to read any spectrogram:</b></p>
+    <p>➡️ <span class="hv">Horizontal line</span> = a steady tone (a carrier). Two lines a hair apart
+    (one per ear) = a binaural pair.<br>
+    ⬆️ <span class="hv">Height of the line</span> = its pitch (the carrier Hz).<br>
+    🔥 <span class="hv">Brightness</span> = loudness.<br>
+    🌫️ <span class="hv">Fuzzy wash</span> = noise (surf, pink noise — used to relax and to mask the tones).<br>
+    ⏸️ A line <span class="hv">appearing/disappearing</span> = the engineers switching layers on/off as the
+    exercise moves between Focus levels.</p>
+  </div>
+</section>
+
+<!-- ══════════ 5. THE FREQUENCIES PANEL ══════════ -->
+<section>
+  <h2><span class="num">5</span> The 〜 Frequencies panel in your library</h2>
+  <p class="lead">Every FLAC tape in your library was measured (16-second FFT windows, every 15–30 s,
+  left/right peaks paired). The 〜 button in the player shows the result.</p>
+
+  <figure>
+    <img src="_freq/008.png" alt="Beat chart of tape 008">
+    <figcaption>The beat chart for tape #008 — this is what the panel shows.</figcaption>
+  </figure>
+
+  <div class="card">
+    <p><b>How to read it:</b></p>
+    <p>🕐 <span class="hv">X-axis</span> — minutes into the tape.<br>
+    〰️ <span class="hv">Y-axis</span> — the <b>beat</b> frequency (log scale), i.e. the brainwave rhythm
+    being delivered at that moment.<br>
+    🎨 <span class="hv">Colored horizontal zones</span> — the bands from section 3 (δ θ α β γ), so a dot's
+    zone tells you which mental state that layer targets.<br>
+    🔵 <span class="hv">Dot color</span> (colorbar) — which <b>carrier</b> is delivering it: dark purple ≈ 50–100 Hz,
+    pink ≈ 300 Hz, yellow ≈ 600–1000 Hz. Several dot-rows at once = stacked layers.<br>
+    🏷️ <span class="hv">The chips below the chart</span> — the same data as text:
+    <code>301 Hz → 3.85 Hz · δ delta · min 6–30</code> reads as "a 301 Hz carrier delivered a 3.85 Hz delta
+    beat from minute 6 to 30".</p>
+  </div>
+
+  <p>Example reading, tape #008: a <span class="hp">1.5 Hz delta anchor</span> runs start-to-finish
+  (body asleep), a <span class="hp">4 Hz theta layer</span> joins at minute 6 (mind into meditation), and a
+  <span class="hp">10 Hz alpha layer</span> pulses in twice mid-session (receptive awareness for the
+  Focus 12 work) — the Threshold recipe, visible at a glance.</p>
+</section>
+
+<!-- ══════════ 6. LIVE DEMO ══════════ -->
+<section>
+  <h2><span class="num">6</span> Hear it yourself — live binaural generator</h2>
+  <div class="card demo">
+    <h3>◈ Interactive demo</h3>
+    <p class="warn">⚠️ Stereo headphones required — the illusion cannot happen through speakers.
+    Keep the volume low and comfortable.</p>
+    <div class="row">
+      <label for="d-carrier">Carrier (the pitch)</label>
+      <input type="range" id="d-carrier" min="60" max="500" value="100" step="1">
+      <span class="val" id="d-carrier-v">100 Hz</span>
+    </div>
+    <div class="row">
+      <label for="d-beat">Beat (the cargo)</label>
+      <input type="range" id="d-beat" min="0.5" max="30" value="4" step="0.1">
+      <span class="val" id="d-beat-v">4.0 Hz · θ theta</span>
+    </div>
+    <div class="bandbtns">
+      <button data-b="2" style="color:#b9a8ff">δ delta 2 Hz</button>
+      <button data-b="4" style="color:#c9bcff">θ theta 4 Hz</button>
+      <button data-b="10" style="color:#7be0ec">α alpha 10 Hz</button>
+      <button data-b="20" style="color:#f0d089">β beta 20 Hz</button>
+    </div>
+    <div class="earbox">
+      <div class="ear L">LEFT ear<b id="d-left">100.0 Hz</b></div>
+      <div class="ear B">your brain perceives<b id="d-diff">4.0 Hz</b></div>
+      <div class="ear R">RIGHT ear<b id="d-right">104.0 Hz</b></div>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:18px">
+      <button id="demo-toggle">▶ &nbsp;START TONES</button>
+    </div>
+    <p style="font-size:12.5px;color:var(--muted);margin:8px 0 0">
+      Try this: start at θ 4 Hz and listen for the slow wobble — that pulse is not in the audio,
+      it's your auditory system creating it. Then jump to β 20 Hz and feel the wobble become a flutter.</p>
+  </div>
+</section>
+
+<div class="footer">
+  Figures measured from your own FLAC library (16 s Hann-window FFTs, sub-bin peak interpolation).<br>
+  Full data: <code>Hemi-Sync Frequencies (Waves).md</code> · <code>Hemi-Sync Frequencies (Other Collections).md</code>
+  · <code>hemisync_frequencies.json</code><br><br>
+  <a class="backlink" href="index.html">← back to the Tape Library</a>
+</div>
+
+</div>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const BAND=b=> b<4?'δ delta': b<8?'θ theta': b<14?'α alpha': b<30?'β beta':'γ gamma';
+  let ctx=null,oL=null,oR=null,gain=null,playing=false;
+  function readout(){
+    const c=parseFloat($('d-carrier').value), b=parseFloat($('d-beat').value);
+    $('d-carrier-v').textContent=c+' Hz';
+    $('d-beat-v').textContent=b.toFixed(1)+' Hz · '+BAND(b);
+    $('d-left').textContent=c.toFixed(1)+' Hz';
+    $('d-right').textContent=(c+b).toFixed(1)+' Hz';
+    $('d-diff').textContent=b.toFixed(1)+' Hz';
+    if(playing){oL.frequency.value=c;oR.frequency.value=c+b;}
+  }
+  function start(){
+    ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+    ctx.resume();
+    gain=ctx.createGain();gain.gain.value=0.0;
+    gain.connect(ctx.destination);
+    const mkOsc=(pan)=>{
+      const o=ctx.createOscillator();o.type='sine';
+      const p=ctx.createStereoPanner();p.pan.value=pan;
+      o.connect(p);p.connect(gain);o.start();return o;
+    };
+    oL=mkOsc(-1);oR=mkOsc(1);
+    playing=true;readout();
+    gain.gain.linearRampToValueAtTime(0.18,ctx.currentTime+0.6);   // gentle fade-in
+    const t=$('demo-toggle');t.textContent='⏸  STOP TONES';t.classList.add('playing');
+  }
+  function stop(){
+    if(!playing)return;
+    gain.gain.linearRampToValueAtTime(0.0001,ctx.currentTime+0.4);
+    const _oL=oL,_oR=oR;setTimeout(()=>{_oL.stop();_oR.stop();},500);
+    playing=false;
+    const t=$('demo-toggle');t.textContent='▶  START TONES';t.classList.remove('playing');
+  }
+  $('demo-toggle').onclick=()=>playing?stop():start();
+  $('d-carrier').oninput=readout;
+  $('d-beat').oninput=readout;
+  document.querySelectorAll('.bandbtns button').forEach(btn=>{
+    btn.onclick=()=>{$('d-beat').value=btn.dataset.b;readout();};
+  });
+  readout();
+})();
+</script>
+</body>
+</html>

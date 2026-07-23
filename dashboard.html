@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Sessions — Gateway Meditation Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjciIGZpbGw9IiMwYTBhMWEiLz4KPHBhdGggZD0iTTIgMTMuNSBDNSA2LjUgOSA2LjUgMTIgMTMuNSBTMTkgMjAuNSAyMyAxMy41IFMzMCA3IDMyIDExLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhZDFlMCIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNMCAyMCBDNCAyNSA4IDE2IDEyIDIwIFMxOSAyNSAyMyAyMCBTMzAgMTUgMzIgMTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhiN2JmMCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC45NSIvPgo8L3N2Zz4=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjciIGZpbGw9IiMwYTBhMWEiLz4KPHBhdGggZD0iTTIgMTMuNSBDNSA2LjUgOSA2LjUgMTIgMTMuNSBTMTkgMjAuNSAyMyAxMy41IFMzMCA3IDMyIDExLjUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhZDFlMCIgc3Ryb2tlLXdpZHRoPSIyLjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNMCAyMCBDNCAyNSA4IDE2IDEyIDIwIFMxOSAyNSAyMyAyMCBTMzAgMTUgMzIgMTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhiN2JmMCIgc3Ryb2tlLXdpZHRoPSIyLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgb3BhY2l0eT0iMC45NSIvPgo8L3N2Zz4=">
+<meta name="theme-color" content="#0a0a1a">
+<script src="chart.umd.min.js"></script>
+<style>
+  :root{
+    /* ---- Luxury Gradient Modern palette (shared with the Gateway Library) ---- */
+    --bg:#0a0a1a; --bg2:#12122e;
+    --primary:#8b7bf0; --primary-2:#5a4bd0; --secondary:#5ad1e0; --gold:#e8c06a;
+    --acc:#8b7bf0;   /* alias kept for chart series that reference the accent */
+    /* glass surfaces */
+    --surface:rgba(255,255,255,.045); --surface-2:rgba(255,255,255,.075);
+    --surface-strong:rgba(20,18,46,.72);
+    --border:rgba(160,160,255,.14); --border-2:rgba(160,160,255,.30);
+    /* text (contrast-checked on the dark mesh) */
+    --text:#ececf7; --text-muted:#a6a6c8; --text-dim:#8686ab;
+    /* brainwave band language, matched to the Library's frequency chips */
+    --delta:#8b7bf0; --theta:#c9bcff; --alpha:#5ad1e0; --beta:#e8c06a; --gamma:#f0a889;
+    --hr:#ff7aa8; --good:#5ad1e0; --ok:#e8c06a; --bad:#f0708f;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.7);
+    --ring:0 0 0 3px rgba(139,123,240,.55);
+    --r:18px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;color:var(--text);min-height:100vh;
+    font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:clamp(13.5px,.4vw + 12.5px,15px);line-height:1.55;-webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(1100px 780px at 12% -8%, #2a1e57 0%, transparent 56%),
+      radial-gradient(1000px 720px at 100% 0%, #0e3040 0%, transparent 52%),
+      radial-gradient(900px 700px at 60% 120%, #1c1746 0%, transparent 55%),
+      var(--bg);
+    background-attachment:fixed;padding-bottom:80px}
+  a{color:inherit}
+  :focus-visible{outline:none;box-shadow:var(--ring);border-radius:10px}
+  ::selection{background:rgba(90,209,224,.28)}
+  .skip{position:absolute;left:-999px;top:8px;background:var(--primary);color:#fff;padding:8px 14px;
+    border-radius:10px;z-index:200;text-decoration:none}
+  .skip:focus{left:12px}
+
+  /* ---- shared app nav ---- */
+  .appnav{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;
+    padding:11px clamp(14px,3vw,28px);
+    background:linear-gradient(180deg,rgba(10,10,26,.9),rgba(10,10,26,.62));
+    backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
+    border-bottom:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.3px;font-size:14.5px;margin-right:6px}
+  .brand svg{width:22px;height:22px;flex:none}
+  .brand b{background:linear-gradient(90deg,var(--primary),var(--secondary));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .appnav .spacer{flex:1}
+  .navlink{display:inline-flex;align-items:center;gap:7px;padding:8px 15px;border-radius:12px;
+    border:1px solid var(--border);background:var(--surface);color:var(--text-muted);
+    text-decoration:none;font-size:13px;font-weight:550;transition:.16s;white-space:nowrap}
+  .navlink:hover{background:var(--surface-2);color:var(--text);border-color:var(--border-2);transform:translateY(-1px)}
+  .navlink[aria-current="page"]{color:#fff;border-color:transparent;
+    background:linear-gradient(135deg,var(--primary),var(--primary-2));box-shadow:0 6px 18px -6px rgba(120,100,240,.6)}
+
+  /* ---- hero ---- */
+  header.hero{padding:clamp(22px,4vw,40px) clamp(16px,3vw,28px) 8px;max-width:1180px;margin:0 auto}
+  h1{margin:0;font-weight:750;letter-spacing:.3px;font-size:clamp(24px,3.4vw,38px);
+    background:linear-gradient(92deg,#c9bcff 0%,#b9a8ff 40%,#7be0ec 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--text-muted);font-size:clamp(12.5px,.9vw,13.5px);margin-top:8px;max-width:760px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 clamp(14px,3vw,28px) 40px}
+
+  /* ---- tabs ---- */
+  .tabs{display:flex;flex-wrap:wrap;gap:9px;margin:20px 0 6px}
+  .tab{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);
+    padding:9px 15px;border-radius:13px;cursor:pointer;font-size:13px;font-weight:550;white-space:nowrap;
+    transition:.16s;font-family:inherit}
+  .tab:hover{background:var(--surface-2);color:var(--text);border-color:var(--border-2);transform:translateY(-1px)}
+  .tab[aria-selected="true"],.tab.active{color:#fff;border-color:transparent;
+    background:linear-gradient(135deg,var(--primary),var(--primary-2));box-shadow:0 8px 20px -8px rgba(120,100,240,.65)}
+
+  /* ---- glass surfaces ---- */
+  .glass, .panel, .card, .gcard, .note{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+    backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);
+    box-shadow:var(--shadow)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:13px;margin:18px 0}
+  .card{padding:15px 17px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:2px;
+    background:linear-gradient(90deg,var(--primary),var(--secondary));opacity:.55}
+  .card .k{color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.7px;font-weight:600}
+  .card .v{font-size:clamp(22px,2.4vw,27px);font-weight:700;margin-top:7px;letter-spacing:.2px}
+  .card .v small{font-size:13px;color:var(--text-muted);font-weight:400}
+  .panel{padding:18px 20px;margin:16px 0}
+  .panel h2{margin:0 0 3px;font-size:clamp(14.5px,1.4vw,16.5px);font-weight:650}
+  .panel p.cap{margin:0 0 14px;color:var(--text-muted);font-size:12.5px;max-width:80ch}
+  .chartbox{position:relative;height:clamp(260px,38vw,310px)}
+  .chartbox.tall{height:clamp(300px,42vw,350px)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.row2{grid-template-columns:1fr}}
+  .controls{display:flex;align-items:center;gap:11px;margin:10px 0 16px;flex-wrap:wrap}
+  .controls label{color:var(--text-muted);font-size:12.5px;font-weight:550}
+  input[type=range]{accent-color:var(--primary);cursor:pointer}
+  .listen{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:12px;border:none;
+    cursor:pointer;font-size:13px;font-weight:650;font-family:inherit;color:#08131a;
+    background:linear-gradient(135deg,var(--secondary),#7be0ec);
+    box-shadow:0 8px 20px -8px rgba(90,209,224,.7);transition:.16s;text-decoration:none}
+  .listen:hover{transform:translateY(-1px);filter:brightness(1.06)}
+  .listen.small{padding:6px 12px;font-size:12px}
+  .note{padding:15px 19px;color:#d7d7ef;font-size:13px;
+    background:linear-gradient(180deg,rgba(139,123,240,.10),rgba(90,209,224,.05)),var(--surface)}
+  .note b{color:#fff}
+  .pill{display:inline-flex;align-items:center;padding:2px 10px;border-radius:20px;font-size:11.5px;
+    margin-left:8px;font-weight:600}
+  .pill.good{background:rgba(90,209,224,.15);color:#8fe6f0;border:1px solid rgba(90,209,224,.4)}
+  .pill.ok{background:rgba(232,192,106,.15);color:#f0d089;border:1px solid rgba(232,192,106,.4)}
+  .pill.bad{background:rgba(240,112,143,.15);color:#f5a3b6;border:1px solid rgba(240,112,143,.4)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:right;padding:9px 11px;border-bottom:1px solid var(--border)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--text-muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  tbody tr{transition:.12s}
+  tbody tr:hover{background:var(--surface-2)}
+  .err{padding:40px;text-align:center;color:var(--text-muted)}
+  .hint{color:var(--text-dim);font-size:12px;margin-top:2px}
+  /* ---- guide ---- */
+  .gcard{padding:17px 19px;margin:14px 0}
+  .gcard h3{margin:0;font-size:15px;font-weight:650;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .gcard .meta{color:var(--text-muted);font-size:12px;margin:5px 0 11px}
+  .gcard .desc{color:#d7d7ef;font-size:13px;margin:0 0 11px}
+  .ck{display:flex;gap:11px;align-items:flex-start;padding:8px 9px;border-radius:11px;cursor:pointer;transition:.12s}
+  .ck:hover{background:var(--surface-2)}
+  .ck input{margin-top:2px;width:16px;height:16px;accent-color:var(--secondary);cursor:pointer;flex:none}
+  .ck span{font-size:13px;color:#e2e2f4}
+  .ck.done span{color:var(--text-dim);text-decoration:line-through}
+  .pbar{height:9px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;
+    overflow:hidden;margin-top:10px}
+  .pbar div{height:100%;background:linear-gradient(90deg,var(--secondary),var(--primary));transition:width .4s}
+  .prep li{margin:5px 0;color:#d7d7ef;font-size:13px}
+  details.faq{border-top:1px solid var(--border);padding:9px 2px}
+  details.faq summary{cursor:pointer;color:#e2e2f4;font-size:13px;font-weight:600}
+  details.faq summary::marker{color:var(--secondary)}
+  details.faq p{color:var(--text-muted);font-size:12.5px;margin:8px 0 2px}
+  code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:6px;font-size:12px}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;
+      scroll-behavior:auto!important}
+  }
+</style>
+</head>
+<body>
+<a href="#view" class="skip">Skip to content</a>
+<nav class="appnav" aria-label="Primary">
+  <span class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0a0a1a"/>
+      <path d="M2 13.5 C5 6.5 9 6.5 12 13.5 S19 20.5 23 13.5 S30 7 32 11.5" fill="none" stroke="#5ad1e0" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M0 20 C4 25 8 16 12 20 S19 25 23 20 S30 15 32 19" fill="none" stroke="#8b7bf0" stroke-width="2.2" stroke-linecap="round"/></svg>
+    <b>Gateway</b>
+  </span>
+  <a class="navlink" href="index.html">🎧 Library</a>
+  <a class="navlink" href="dashboard.html" aria-current="page">🧠 My Sessions</a>
+  <span class="spacer"></span>
+</nav>
+
+<header class="hero">
+  <h1>Meditation Dashboard</h1>
+  <div class="sub" id="subtitle">Loading…</div>
+</header>
+
+<main class="wrap">
+  <div class="tabs" id="tabs" role="tablist" aria-label="Sessions and views"></div>
+  <div id="view" role="tabpanel" tabindex="-1" aria-label="Selected view"></div>
+</main>
+
+<script src="dashboard_data.js" onerror="window.__noData=true"></script>
+<script>
+const C = {delta:'--delta',theta:'--theta',alpha:'--alpha',beta:'--beta',gamma:'--gamma'};
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const BAND_INFO = {
+  delta:['Delta','0.5–4 Hz','deep sleep, unconscious'],
+  theta:['Theta','4–8 Hz','drowsy, hypnagogic, deep meditation — the Focus 10 zone'],
+  alpha:['Alpha','8–13 Hz','relaxed, calm, eyes-closed "mind awake / body asleep"'],
+  beta :['Beta','13–30 Hz','active thinking, alertness'],
+  gamma:['Gamma','30+ Hz','high-level processing'],
+};
+// ---- Gateway curriculum, distilled from the Discovery Manual & Gateway
+//      Intermediate Workbook (docs/markdown/). Checklist state persists per
+//      tape in this browser (localStorage). Structured by Wave.
+const WAVE1_TAPES = [
+  {tape:'Orientation',
+   desc:'Foundation tools. Learn to clear the mind on demand and gather energy. First signpost: Focus 3 — brain and mind coherent, synchronized, balanced.',
+   goals:[
+     'Build your Energy Conversion Box — a vivid mental container; practice dropping every distraction into it (worries, words like "can\'t", work)',
+     'Make the Gateway Affirmation your own — reword it until it feels personally true',
+     'Do Resonant Tuning ALOUD — set your own rhythm and pace; notice physical sensations',
+     'Energy breathing: inhale sparkling energy through the whole body, release stale energy through the soles of the feet',
+     'Practice the eye open/close drill — first step in controlling autonomic processes',
+     'Stay for the full return signal to C-1 — the more completely you come back, the deeper you go next time'],
+   eeg:'Expect mostly alpha (relaxed, eyes closed) with beta dropping as the Box absorbs mental chatter.'},
+  {tape:'Introduction to Focus 10',
+   desc:'The core skill of Wave 1: Focus 10 — mind awake, body asleep.',
+   goals:[
+     'Follow the body-part sequence: focus on, then totally release, each part',
+     '"Look with your closed eyes" as you relax toward body sleep',
+     'Notice heightened sensitivity (heartbeat, blood flow behind the ears) without engaging it — into the Box with expectations',
+     'Let the Health Affirmation work at the end without effort',
+     'If you fall asleep, don\'t be discouraged — note it and adjust (time of day, splash water, sleep symbol in the Box)'],
+   eeg:'Theta share should rise above your Orientation baseline while you stay responsive — theta with awareness IS Focus 10.'},
+  {tape:'Advanced Focus 10',
+   desc:'Deepen Focus 10 and build the REBAL — your Resonant Energy Balloon.',
+   goals:[
+     'Build the REBAL with 8–10 resonant breaths: energy up on inhale, swirled down and around on exhale, forming a bright floating ball',
+     'Learn the one-breath switch: inhale, picture a bright circle with "10" inside, exhale it around you',
+     'Practice "popping" the REBAL during normal daily life (C-1)',
+     'Sense it your own way — feel, hear, or simply know it; visualizing is only one way',
+     'Reabsorb the REBAL when finished'],
+   eeg:'Look for higher theta and steadier hemispheric symmetry than tape 2 — and a lower heart rate.'},
+  {tape:'Release and Recharge',
+   desc:'A daily-use method to find, release, and convert self-imposed fears and limits while in Focus 10.',
+   goals:[
+     'Let a fear or limit surface on its own — trust your larger self to pick what you\'re ready for',
+     'Bubble away the fear, then the related emotion, then reconnect with the pure energy that existed before the limit',
+     'ALWAYS pull in clean energy as the final step',
+     'If nothing comes up, bubble "nothing" away — the process may work on deeper levels',
+     'Advanced: pre-load the Box with a symbol for a chosen block and release it deliberately',
+     'Repeat over time — limits have layers; many consider this the most valuable exercise of the whole series'],
+   eeg:'Emotional release work may briefly spike beta/gamma, then settle deeper — watch the depth curve recover higher than it started.'},
+  {tape:'Exploration of Sleep',
+   desc:'Use sleep itself as a Gateway. The Hemi-Sync fades out at the end and leaves you in natural sleep.',
+   goals:[
+     'Drop ALL expectations — add "I am wholly without expectations, open to all experience" to your Affirmation',
+     'Approach with playful curiosity, like a child exploring',
+     'Don\'t self-check ("am I separating?") during the exercise — assess only afterwards',
+     'On waking, immediately try to recall what you experienced; journal it in C-1',
+     'Falling asleep is the design here, not a failure'],
+   eeg:'Delta and theta climbing late in the session is success for this tape — the EEG should look like sleep onset.'},
+  {tape:'Free Flow 10',
+   desc:'No more guidance — you are your own guide. Free exploration in Focus 10 with every tool you\'ve learned.',
+   goals:[
+     'Write your purpose down beforehand, succinct and straightforward; hold it lightly as you begin',
+     'Choose to be guided rather than demanding how guidance arrives — tingles, twitches and intuitions count',
+     'Play with one tool per repetition: Affirmation, Box, REBAL, Resonant Tuning',
+     'Don\'t chase OBEs — trying too hard is itself the distraction',
+     'Enter with awareness, serenity, openness — and enjoy',
+     'When this feels familiar and comfortable, you\'re ready for Wave II — Threshold (Focus 12)'],
+   eeg:'Compare against your best Focus 10 session — can you reach the same depth without verbal guidance?'},
+];
+const WAVE2_TAPES = [
+  {tape:'Introduction to Focus 12',
+   desc:'Focus 12 — a state of expanded awareness. The mind grows more awake than in Focus 10, but in a different way. Focus 10 is the key: Focus 12 builds naturally out of a deep, stable Focus 10.',
+   goals:[
+     'From a stable, deep Focus 10, notice the "charged" feeling begin — then say "eleven", and as it strengthens, "twelve"',
+     'Don\'t force it — if Focus 12 doesn\'t arise naturally, spend more sessions deepening Focus 10 (it\'s the key to the whole system)',
+     'Explore with the Focus 12 Clock: send your awareness toward 12 (ahead), 3 (right), 9 (left)… then swivel the clock 90° and explore again',
+     'Adopt the Wave II Affirmation — it adds protection, opening the channel only to guidance equal to or greater than your own',
+     'Return cleanly: put out the desire to come back and count 12 → 10, then 10 → 1'],
+   eeg:'Focus 12 should read like a deeper, steadier Focus 10 — high theta+alpha with strong hemispheric balance. Your first F12 session already hit your best depth (62%) and symmetry (77%).'},
+  {tape:'Problem Solving',
+   desc:'Use the expanded awareness of Focus 12 to get answers to specific questions.',
+   goals:[
+     'In C-1 (normal waking), frame ONE specific problem or question — the more specific, the better',
+     'Move to Focus 12 and concentrate on the question and your genuine desire for an answer',
+     'Then RELEASE the concentration — and notice what arrives: images, words, sensations, thought-forms',
+     'Don\'t grab at or judge it during the exercise; record everything immediately afterward',
+     'Re-run for other questions — write each one down beforehand'],
+   eeg:'Look for a concentration phase (beta/gamma may rise) followed by a release into calm — answers tend to surface in the calm, not the strain.'},
+  {tape:'One-Month Patterning',
+   desc:'Plant a desired life change into Focus 12 — a tool built for repeated use over about a month.',
+   goals:[
+     'Choose ONE constructive pattern or position you genuinely desire in your life',
+     'In Focus 12, build it carefully and vividly in your mind',
+     'Release the thought-pattern and move it strongly out into all areas of your expanded awareness — let it flow to the farthest points',
+     'Trust it: a constructive, beneficial pattern begins forming immediately and continues until it\'s reality',
+     'Reinforce regularly over ~a month — effectiveness builds with repetition'],
+   eeg:'Mostly steady, deep Focus 12 — look for sustained depth without the beta spikes of active problem-solving.'},
+  {tape:'Color Breathing',
+   desc:'Daily energy tools using colour and breath — usable any time in waking life, not just on the tape.',
+   goals:[
+     'Green — calm & cleanse: inhale, hold, then picture green pushing emotional charge down and out through the soles of the feet',
+     'Red — speed & strength: inhale picturing the act and the strong energy of red; exhale, open eyes, and perform it',
+     'White — fresh energy: palms up, inhale radiant white energy from above into the palms, up the arms, through the whole self',
+     'Purple — heal & balance: look with closed eyes at a body part that needs help; send cool purple energy, saying "heal, balance"',
+     'Practice them in daily life until they become instant, reliable triggers'],
+   eeg:'Short and active by design; on a full tape, watch for repeated calm dips as each colour-breath lands.'},
+  {tape:'Energy Bar Tool',
+   desc:'Build and charge a tool of focused energy (the EBT) to stimulate non-physical energies — the foundation for the Body-Map work.',
+   goals:[
+     'In Focus 10, picture a dot of light and expand it into a bar of brilliant white energy; give it a shape that\'s easy to hold',
+     'Turn it "on" and "off" slowly (about once a second) with intense concentration; notice a pulse in the solar plexus in time with it',
+     'Speed the on/off toward a stroboscopic blur — the solar-plexus sensation becomes warm, charged, electrical; the whole body energizes',
+     'If your breathing syncs to the on/off rhythm, consciously disassociate it',
+     'Put it to use: remote viewing (stretch one end toward a distant person/event, let energy flow back) or charging your Body Maps'],
+   eeg:'The intense-concentration phase may lift beta/gamma; the "charged warmth" that follows is the marker of success.'},
+  {tape:'Living Body Map',
+   desc:'Use your charged EBT to scan and balance the body, system by system — then the emotional body behind it.',
+   goals:[
+     'In Focus 10, create a glowing white silhouette (or screen, or 3-D statue) of your body',
+     'Scan each system by colour — blue (nervous), red (circulatory), orange (muscle & bone), yellow (organs & glands), white (all)',
+     'Find dim or flickering spots = imbalance; aim GREEN EBT energy to balance, then PURPLE to strengthen and recharge',
+     'Finish on white and charge the whole silhouette with purple to raise the body\'s vibration',
+     'Then do the Emotional Body Map (EBM) behind it — sweep head-to-foot with purple to cleanse the emotional system'],
+   eeg:'A slow, methodical visualization — expect long, stable depth; this is healing/integration work, not exploration.'},
+];
+const WAVES = {
+  1:{name:'Wave 1 · Discovery', tag:'Focus 10 — mind awake, body asleep',
+     intro:'The foundation: learn to clear the mind, gather energy, and reach Focus 10. Distilled from the Discovery Manual.',
+     tapes:WAVE1_TAPES,
+     prep:[
+       'Distraction-free, darkened room; undisturbed for 30–45 min',
+       'Stereo headphones; volume just barely audible',
+       'At least 1 hour after eating; no alcohol, minimal caffeine',
+       'Bathroom first; loosen clothing; shoes/glasses/contacts off',
+       'Lie down or sit with head supported; blanket within reach (metabolic drop is normal)',
+       'Journal afterwards: date/time, position, mood, energy level, anything unusual'],
+     faqs:[
+       ['Groggy after a session?','Count slowly 10 to 1, drink cool water, splash the face, or walk barefoot outdoors releasing energy through the feet.'],
+       ['Keep falling asleep?','Be rested first, try a different time of day, splash water beforehand, put a sleep symbol in the Box, or sit up instead of lying down.'],
+       ['"Clicking out"?','If no time seems to have passed, that\'s click-out, not sleep — it\'s common, the experience is still stored, and it fades with practice.'],
+       ['Buzzing forehead / racing heart?','A normal response to expanded awareness. If it distracts you, put it in the Box and check your volume is barely audible.'],
+       ['Am I "doing it right"?','Suspend expectations about Focus levels. Everyone perceives them differently — accept what comes without judgment.'],
+       ['When to move to the next tape?','When an exercise feels familiar and comfortable. Mastery isn\'t required; you can always return, and results are cumulative.']],
+     closing:'You don\'t need to "master" a tape — familiarity and comfort are enough, results are cumulative, and you can always return. When Free Flow 10 feels natural, <b>Wave II — Threshold</b> introduces Focus 12.'},
+  2:{name:'Wave 2 · Threshold', tag:'Focus 12 — expanded awareness',
+     intro:'Beyond Focus 10 into Focus 12, a state of expanded awareness. You\'ll learn tools to control non-physical energy and make real changes in your life. Distilled from the Gateway Intermediate Workbook.',
+     tapes:WAVE2_TAPES,
+     prep:[
+       'Resonant Breathing first: inhale energy up into the head and swirl it; exhale stale energy out through the feet — over ~6 breaths, distribute fresh energy through the whole body',
+       'Say the Wave II Affirmation with real feeling — the words mean nothing without the desire behind them',
+       'Reach a deep, stable Focus 10 first (count to 10), then let Focus 12 build out of it',
+       'Same setup as Wave 1: dark, quiet, headphones barely audible, undisturbed 30–45 min',
+       'To conclude: take problems from your Box, cleanse them with green EBT energy, count back to C-1, then write up your experience immediately'],
+     faqs:[
+       ['Focus 12 won\'t come?','Focus 10 is the key to the whole system. If 12 doesn\'t arise naturally from 10, spend more sessions deepening and stabilizing Focus 10 first.'],
+       ['Can\'t visualize the EBT or Body Map?','Visualizing is only one channel — "feel" the bar\'s charge or simply know it\'s there. Non-visualizers often feel the energy like a field of static electricity.'],
+       ['Nothing comes during Problem Solving?','Concentrate on the question, then fully release it. Answers usually arrive in the release — as images, words, or sensations — not while you\'re straining.'],
+       ['How long should I spend on Patterning?','It\'s built for repeated use over about a month. Reinforce your chosen pattern regularly; effectiveness grows with repetition.'],
+       ['Which colour energy does what?','Green = calm & cleanse, red = speed & strength, white = fresh energy, purple = heal & balance. Charge the EBT and direct the colour with breath.']],
+     closing:'Beyond Threshold, <b>Wave III — Freedom</b> introduces Focus 15, the state of "no time." Keep journaling — results across the Waves are cumulative.'},
+};
+const ALL_TAPES = [...WAVE1_TAPES, ...WAVE2_TAPES];
+const ckKey = (tape,i) => `gw1ck|${tape}|${i}`;       // tape names are unique across waves
+const ckGet = (tape,i) => localStorage.getItem(ckKey(tape,i)) === '1';
+const ckSet = (tape,i,v) => localStorage.setItem(ckKey(tape,i), v?'1':'0');
+function guideFor(label){ return ALL_TAPES.find(g => label.includes(g.tape)) || null; }
+function waveOf(label){ const m=/Wave\s*(\d+)/.exec(label); return m?+m[1]:1; }
+function latestRecordedWave(){
+  let w=1; (DATA?.sessions||[]).forEach(s=>{ w=Math.max(w, waveOf(s.label)); });
+  return WAVES[w] ? w : 1;
+}
+let guideWave = 1;
+
+Chart.defaults.color = '#a6a6c8';
+Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+Chart.defaults.borderColor = 'rgba(160,160,255,.11)';
+if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  Chart.defaults.animation = false;
+}
+
+let DATA = window.GATEWAY_DATA || null;
+let charts = [];
+
+function destroyCharts(){ charts.forEach(c=>c.destroy()); charts = []; }
+
+// moving-average smoothing + striding for plot performance
+function smooth(arr, win){
+  if(win<=1) return arr.slice();
+  const out=new Array(arr.length); let q=[],s=0,cnt=0;
+  for(let i=0;i<arr.length;i++){
+    const v=arr[i];
+    if(v==null){ out[i]=null; continue; }
+    q.push(v); s+=v; cnt++;
+    if(q.length>win){ const r=q.shift(); if(r!=null){s-=r;cnt--;} }
+    out[i]= s/cnt;
+  }
+  return out;
+}
+function stride(arr, step){ const o=[]; for(let i=0;i<arr.length;i+=step)o.push(arr[i]); return o; }
+
+// accessible text alternative for a canvas chart, from its panel heading + series
+function labelCanvas(ctx, datasets){
+  const head = ctx.closest('.panel,.row2')?.querySelector('h2')?.textContent || 'Chart';
+  const series = (datasets||[]).map(d=>d.label).filter(Boolean).join(', ');
+  ctx.setAttribute('role','img');
+  ctx.setAttribute('aria-label', series ? `${head}: ${series} over time` : head);
+}
+
+function lineChart(ctx, datasets, opts={}){
+  const c = new Chart(ctx, {type:'line', data:{datasets},
+    options:Object.assign({
+      responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{mode:'index', intersect:false},
+      elements:{point:{radius:0}, line:{borderWidth:1.8, tension:.25}},
+      scales:{
+        x:{type:'linear', title:{display:true,text:'minutes'}, ticks:{maxTicksLimit:9, callback:v=>(+v).toFixed(0)}},
+        y:opts.y||{}
+      },
+      plugins:{legend:{display:opts.legend!==false, labels:{boxWidth:12,usePointStyle:true}},
+        tooltip:{callbacks:{title:i=>'t = '+(i[0].parsed.x).toFixed(1)+' min'}}}
+    }, opts.extra||{})
+  });
+  labelCanvas(ctx, datasets); charts.push(c); return c;
+}
+function barChart(ctx, labels, datasets, stacked=false){
+  const c=new Chart(ctx,{type:'bar',data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      scales:{x:{stacked},y:{stacked, ticks:{}}},
+      plugins:{legend:{labels:{boxWidth:12,usePointStyle:true}}}}});
+  labelCanvas(ctx, datasets); charts.push(c); return c;
+}
+
+function fmtPct(x){ return (x*100).toFixed(0)+'%'; }
+function el(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
+
+function pickWin(n){ return Math.max(1, Math.round(n/60)); }   // ~per-minute smoothing default
+function pickStride(n){ return Math.max(1, Math.round(n/600)); }
+
+// ------- per-session view -------
+function renderSession(s){
+  destroyCharts();
+  const view = document.getElementById('view'); view.innerHTML='';
+  const sm = s.summary;
+  const dominant = Object.entries(sm.rel_mean).sort((a,b)=>b[1]-a[1])[0][0];
+  const sigPill = sm.signal_good_pct>=90?'good':(sm.signal_good_pct>=75?'ok':'bad');
+  // other recordings of this same tape (takes) — drives the compare-takes panel
+  const sibs = DATA.sessions.filter(x=>x.label===s.label)
+                            .sort((a,b)=>(a.take||1)-(b.take||1));
+
+  view.appendChild(el(`
+    <div class="cards">
+      <div class="card"><div class="k">Duration</div><div class="v">${sm.duration_min}<small> min</small></div></div>
+      <div class="card"><div class="k">Heart rate</div><div class="v">${sm.hr_mean??'–'}<small> bpm</small></div>
+        <div class="hint">${sm.hr_min}–${sm.hr_max} bpm</div></div>
+      <div class="card"><div class="k">Dominant band</div><div class="v" style="color:${cssv(C[dominant])}">${BAND_INFO[dominant][0]}</div>
+        <div class="hint">${fmtPct(sm.rel_mean[dominant])} of power</div></div>
+      <div class="card"><div class="k">Meditation depth</div><div class="v">${fmtPct(sm.depth_mean)}</div>
+        <div class="hint">theta + alpha share</div></div>
+      <div class="card"><div class="k">Hemispheric balance</div><div class="v">${(sm.sym_mean*100).toFixed(0)}<small>%</small></div>
+        <div class="hint">L/R alpha symmetry</div></div>
+      <div class="card"><div class="k">Stillness</div><div class="v">${sm.stillness_pct}<small>%</small></div>
+        <div class="hint">${sm.jaw_count} jaw · ${sm.blink_count} blinks</div></div>
+      <div class="card"><div class="k">Signal quality</div><div class="v">${sm.signal_good_pct}<small>%</small>
+        <span class="pill ${sigPill}">${sigPill==='good'?'great':sigPill}</span></div>
+        <div class="hint">good electrode contact</div></div>
+      <div class="card"><div class="k">Theta/Beta ratio</div><div class="v">${sm.tbr_mean}</div>
+        <div class="hint">higher = more relaxed</div></div>
+    </div>`));
+
+  // listen link to the matching Gateway Library tape
+  if(s.episode_n){
+    view.appendChild(el(`<div class="controls" style="margin:0 0 4px">
+      <a class="listen" href="index.html?play=${s.episode_n}"
+         aria-label="Listen to this tape in the Gateway Library">▶ Listen to this tape</a>
+      <span class="hint">opens the exercise in the Library</span>
+    </div>`));
+  }
+
+  // multiple recordings of this tape: take switcher + a depth overlay across takes
+  if(sibs.length>1){
+    const short = s.label.replace(/Wave \d+ – /,'');
+    const panel = el(`<div class="panel">
+      <h2>Your takes of “${short}” — take ${s.take} of ${sibs.length}</h2>
+      <p class="cap">Same tape, recorded on different days. Switch takes below; the chart overlays
+        <b style="color:var(--alpha)">meditation depth (θ+α)</b> across every take — a rise over time means
+        you're reaching Focus 10 more deeply.</p>
+      <div class="controls" id="takeswitch" style="margin:2px 0 10px"></div>
+      <div class="chartbox tall"><canvas id="takes"></canvas></div></div>`);
+    view.appendChild(panel);
+    const sw = panel.querySelector('#takeswitch');
+    sibs.forEach(x=>{
+      const cur = x.id===s.id;
+      const b = el(`<button class="tab${cur?' active':''}"${cur?' aria-current="true"':''}>take ${x.take} · ${x.date}</button>`);
+      if(!cur) b.addEventListener('click',()=>select(String(DATA.sessions.indexOf(x))));
+      sw.appendChild(b);
+    });
+  }
+
+  // smoothing control
+  view.appendChild(el(`<div class="controls">
+    <label for="sm">Smoothing</label>
+    <input type="range" id="sm" min="1" max="120" value="${pickWin(sm.n)}"
+      aria-label="Chart smoothing window">
+    <span id="smv" class="hint"></span>
+    <span class="hint" style="margin-left:auto">recorded ${s.date} · ${s.file}</span>
+  </div>`));
+
+  // panels
+  view.appendChild(el(`<div class="panel"><h2>Relative band power over time</h2>
+    <p class="cap">Share of total EEG power in each band. Watch <b style="color:var(--alpha)">alpha</b> and <b style="color:var(--theta)">theta</b> rise as you settle into Focus 10.</p>
+    <div class="chartbox tall"><canvas id="bands"></canvas></div></div>`));
+
+  view.appendChild(el(`<div class="panel"><h2>Meditation depth vs. mental activity</h2>
+    <p class="cap">Depth = theta + alpha (calm, inward). Beta = active thinking. Deepening sessions show depth above beta.</p>
+    <div class="chartbox"><canvas id="depth"></canvas></div></div>`));
+
+  view.appendChild(el(`<div class="row2">
+    <div class="panel"><h2>Heart rate</h2><p class="cap">Lower, steady HR signals relaxation response.</p>
+      <div class="chartbox"><canvas id="hr"></canvas></div></div>
+    <div class="panel"><h2>Stillness & jaw tension</h2><p class="cap">Head movement; spikes = motion. Red marks jaw clenches.</p>
+      <div class="chartbox"><canvas id="move"></canvas></div></div>
+  </div>`));
+
+  view.appendChild(el(`<div class="row2">
+    <div class="panel"><h2>Hemispheric alpha symmetry</h2><p class="cap">1.0 = left & right balanced — Hemi-Sync aims to synchronise the hemispheres.</p>
+      <div class="chartbox"><canvas id="sym"></canvas></div></div>
+    <div class="panel"><h2>Signal quality</h2><p class="cap">Electrode contact across the session (Muse HSI).</p>
+      <div class="chartbox"><canvas id="qual"></canvas></div></div>
+  </div>`));
+
+  view.appendChild(el(`<div class="panel"><h2>Frontal alpha asymmetry (emotional tone)</h2>
+    <p class="cap">ln(right) − ln(left) frontal alpha. Above 0 → left-frontal dominance, linked to positive/approach states; below 0 → withdrawal/avoidance. Useful during Release &amp; Recharge work.</p>
+    <div class="chartbox"><canvas id="faa"></canvas></div></div>`));
+
+  const g = guideFor(s.label);
+  if(g){
+    const gp = el(`<div class="panel"><h2>This tape's goals — ${g.tape}</h2>
+      <p class="cap">${g.desc} <a href="#" id="togd" style="color:var(--acc)">Full guide ✦</a></p></div>`);
+    gp.appendChild(checklistEl(g.tape, g.goals, null));
+    view.appendChild(gp);
+    gp.querySelector('#togd').addEventListener('click', e=>{e.preventDefault(); guideWave=waveOf(s.label); select('guide');});
+  }
+
+  const t = s.samples.map(x=>x.t/60);
+  const get = k => s.samples.map(x=>x[k]);
+
+  function draw(){
+    const win = +document.getElementById('sm').value;
+    document.getElementById('smv').textContent = win<=1?'raw':('~'+win+'s window');
+    const st = pickStride(s.samples.length);
+    const L = stride(t, st);
+    const P = k => { const ys=stride(smooth(get(k), win), st); return ys.map((y,i)=>({x:L[i], y})); };
+    destroyCharts();
+
+    lineChart(document.getElementById('bands'), ['delta','theta','alpha','beta','gamma'].map(b=>({
+      label:BAND_INFO[b][0], data:P(b), borderColor:cssv(C[b]),
+      backgroundColor:cssv(C[b])+'22', fill:false
+    })), {y:{min:0, ticks:{callback:v=>(v*100).toFixed(0)+'%'}, title:{display:true,text:'% of power'}}});
+
+    lineChart(document.getElementById('depth'), [
+      {label:'Meditation depth (θ+α)', data:P('depth'), borderColor:cssv('--alpha'),
+        backgroundColor:'rgba(34,197,94,.18)', fill:true},
+      {label:'Beta (thinking)', data:P('beta'), borderColor:cssv('--beta'), fill:false},
+    ], {y:{min:0, ticks:{callback:v=>(v*100).toFixed(0)+'%'}}});
+
+    lineChart(document.getElementById('hr'), [
+      {label:'Heart rate', data:P('hr'), borderColor:cssv('--hr'),
+        backgroundColor:'rgba(255,93,143,.15)', fill:true, spanGaps:true}
+    ], {legend:false, y:{title:{display:true,text:'bpm'}}});
+
+    const jaws = s.events.filter(e=>e[1]==='jaw').map(e=>({x:e[0]/60,y:0}));
+    lineChart(document.getElementById('move'), [
+      {label:'Head movement', data:P('move'), borderColor:cssv('--acc'),
+        backgroundColor:'rgba(124,156,255,.15)', fill:true},
+      {label:'Jaw clench', borderColor:cssv('--bad'), backgroundColor:cssv('--bad'),
+        pointStyle:'triangle', pointRadius:6, showLine:false, data:jaws}
+    ], {legend:true, y:{min:0, title:{display:true,text:'Δ accel'}}});
+
+    lineChart(document.getElementById('sym'), [
+      {label:'L/R alpha symmetry', data:P('sym'), borderColor:cssv('--theta'),
+        backgroundColor:'rgba(168,85,247,.15)', fill:true}
+    ], {legend:false, y:{min:0,max:1}});
+
+    lineChart(document.getElementById('faa'), [
+      {label:'Frontal alpha asymmetry', data:P('faa'), borderColor:cssv('--gamma'),
+        backgroundColor:'rgba(239,68,68,.10)', fill:{target:{value:0}}}
+    ], {legend:false, y:{title:{display:true,text:'ln(AF8 α) − ln(AF7 α)'}, grid:{color:ctx=>ctx.tick&&ctx.tick.value===0?'rgba(230,235,255,.35)':'rgba(120,140,200,.12)'}}});
+
+    // quality as a doughnut
+    const q = sm.hsi_counts;
+    const qc = new Chart(document.getElementById('qual'),{type:'doughnut',
+      data:{labels:['Good','OK','Poor'],datasets:[{data:[q['1']||0,q['2']||0,q['4']||0],
+        backgroundColor:[cssv('--good'),cssv('--ok'),cssv('--bad')],borderColor:cssv('--panel'),borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,cutout:'62%',
+        plugins:{legend:{position:'right'}}}});
+    charts.push(qc);
+
+    // compare-takes overlay (rebuilt here so destroyCharts() can't orphan it)
+    if(sibs.length>1){
+      const palette=[cssv('--alpha'),cssv('--secondary'),cssv('--gold'),cssv('--gamma'),cssv('--beta')];
+      const ds = sibs.map((x,i)=>{
+        const w=pickWin(x.summary.n), xs=pickStride(x.samples.length);
+        const L=stride(x.samples.map(p=>p.t/60), xs);
+        const ys=stride(smooth(x.samples.map(p=>p.depth), w), xs);
+        const cur=x.id===s.id;
+        return {label:`take ${x.take} · ${x.date}`, data:ys.map((y,k)=>({x:L[k],y})),
+          borderColor:palette[i%palette.length], backgroundColor:palette[i%palette.length]+'22',
+          borderWidth:cur?3:1.6, borderDash:cur?[]:[5,4], fill:false};
+      });
+      lineChart(document.getElementById('takes'), ds,
+        {y:{min:0, ticks:{callback:v=>(v*100).toFixed(0)+'%'}, title:{display:true,text:'depth (θ+α)'}}});
+    }
+  }
+  draw();
+  document.getElementById('sm').addEventListener('input', draw);
+
+  const focusLvl = waveOf(s.label) >= 2 ? 'Focus 12 (expanded awareness)' : 'Focus 10 — "mind awake, body asleep"';
+  view.appendChild(el(`<div class="note" style="margin-top:18px">
+    <b>Reading this session.</b> The Gateway tapes use Hemi-Sync tones to guide you toward
+    <b>${focusLvl}</b> — which on EEG looks like rising
+    <span style="color:${cssv('--alpha')}">alpha</span> and
+    <span style="color:${cssv('--theta')}">theta</span> with falling
+    <span style="color:${cssv('--beta')}">beta</span>, a slowing heart rate, and high stillness.
+    See the <b>✦ Gateway Guide</b> tab for this tape's goals, and <b>Compare all sessions</b> to track progress.
+  </div>`));
+}
+
+// ------- compare view -------
+function renderCompare(){
+  destroyCharts();
+  const view=document.getElementById('view'); view.innerHTML='';
+  const S=DATA.sessions;
+  const labels=S.map(s=>s.label.replace(/Wave \d+ – /,'') + (s.takes_total>1?` (t${s.take})`:''));
+
+  view.appendChild(el(`<div class="panel"><h2>Average brain-state mix per tape</h2>
+    <p class="cap">Relative power composition. A shift toward alpha/theta over time suggests deepening practice.</p>
+    <div class="chartbox tall"><canvas id="cbands"></canvas></div></div>`));
+
+  view.appendChild(el(`<div class="row2">
+    <div class="panel"><h2>Meditation depth (θ+α)</h2><p class="cap">Higher = deeper inward state.</p>
+      <div class="chartbox"><canvas id="cdepth"></canvas></div></div>
+    <div class="panel"><h2>Average heart rate</h2><p class="cap">Lower = stronger relaxation.</p>
+      <div class="chartbox"><canvas id="chr"></canvas></div></div>
+  </div>`));
+
+  view.appendChild(el(`<div class="row2">
+    <div class="panel"><h2>Stillness & signal quality</h2><p class="cap">Practical quality of each recording.</p>
+      <div class="chartbox"><canvas id="cqual"></canvas></div></div>
+    <div class="panel"><h2>Theta/Beta ratio</h2><p class="cap">Calm vs. active thinking.</p>
+      <div class="chartbox"><canvas id="ctbr"></canvas></div></div>
+  </div>`));
+
+  const bandColors={delta:cssv('--delta'),theta:cssv('--theta'),alpha:cssv('--alpha'),beta:cssv('--beta'),gamma:cssv('--gamma')};
+  barChart(document.getElementById('cbands'), labels,
+    ['delta','theta','alpha','beta','gamma'].map(b=>({label:BAND_INFO[b][0],
+      data:S.map(s=>+(s.summary.rel_mean[b]*100).toFixed(1)), backgroundColor:bandColors[b]})), true);
+
+  barChart(document.getElementById('cdepth'), labels,
+    [{label:'Depth %', data:S.map(s=>+(s.summary.depth_mean*100).toFixed(1)), backgroundColor:cssv('--alpha')}]);
+
+  barChart(document.getElementById('chr'), labels,
+    [{label:'Mean bpm', data:S.map(s=>s.summary.hr_mean), backgroundColor:cssv('--hr')}]);
+
+  barChart(document.getElementById('cqual'), labels, [
+    {label:'Stillness %', data:S.map(s=>s.summary.stillness_pct), backgroundColor:cssv('--acc')},
+    {label:'Signal good %', data:S.map(s=>s.summary.signal_good_pct), backgroundColor:cssv('--good')}]);
+
+  barChart(document.getElementById('ctbr'), labels,
+    [{label:'Theta/Beta', data:S.map(s=>s.summary.tbr_mean), backgroundColor:cssv('--theta')}]);
+
+  // summary table
+  let rows = S.map(s=>{const m=s.summary;return `<tr>
+    <td>${s.label}${s.takes_total>1?` <span class="hint">· take ${s.take}</span>`:''}</td><td>${m.duration_min}</td><td>${m.hr_mean??'–'}</td>
+    <td>${fmtPct(m.rel_mean.alpha)}</td><td>${fmtPct(m.rel_mean.theta)}</td>
+    <td>${fmtPct(m.rel_mean.beta)}</td><td>${fmtPct(m.depth_mean)}</td>
+    <td>${m.tbr_mean}</td><td>${m.stillness_pct}%</td><td>${m.signal_good_pct}%</td></tr>`;}).join('');
+  view.appendChild(el(`<div class="panel"><h2>Session metrics</h2>
+    <div style="overflow-x:auto">
+    <table><thead><tr><th>Tape</th><th>Min</th><th>HR</th><th>Alpha</th><th>Theta</th>
+    <th>Beta</th><th>Depth</th><th>θ/β</th><th>Still</th><th>Signal</th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`));
+
+  view.appendChild(el(`<div class="note" style="margin-top:18px">
+    <b>Tracking progress.</b> As you advance through the Wave 1 tapes, look for a gradual rise in
+    <b>meditation depth</b> and <b>theta/beta ratio</b>, and a drop in average heart rate — signs you're
+    reaching Focus 10 more reliably. Bars here update automatically each time you re-run
+    <code>process.py</code> after adding a new tape.
+  </div>`));
+}
+
+// ------- guide -------
+function checklistEl(tape, goals, onChange){
+  const box = document.createElement('div');
+  goals.forEach((g,i)=>{
+    const row = el(`<label class="ck${ckGet(tape,i)?' done':''}">
+      <input type="checkbox" ${ckGet(tape,i)?'checked':''}><span>${g}</span></label>`);
+    row.querySelector('input').addEventListener('change', e=>{
+      ckSet(tape,i,e.target.checked);
+      row.classList.toggle('done', e.target.checked);
+      if(onChange) onChange();
+    });
+    box.appendChild(row);
+  });
+  return box;
+}
+function guideProgress(tapes){
+  let done=0, total=0;
+  tapes.forEach(g=>g.goals.forEach((_,i)=>{ total++; if(ckGet(g.tape,i)) done++; }));
+  return {done, total};
+}
+function renderGuide(){
+  destroyCharts();
+  const view=document.getElementById('view'); view.innerHTML='';
+  const W = WAVES[guideWave] || WAVES[1];
+  const firstUnrecorded = (()=>{ let found=false; return W.tapes.map(g=>{
+      if(found) return false; const rec=DATA.sessions.some(s=>s.label.includes(g.tape));
+      if(!rec){ found=true; return true; } return false; }); })();
+
+  // wave toggle
+  const toggle = el(`<div class="tabs" style="margin:0 0 6px"></div>`);
+  Object.keys(WAVES).forEach(w=>{
+    const b=el(`<div class="tab${+w===guideWave?' active':''}">${WAVES[w].name}</div>`);
+    b.onclick=()=>{ guideWave=+w; renderGuide(); };
+    toggle.appendChild(b);
+  });
+  view.appendChild(toggle);
+
+  const head = el(`<div class="panel"><h2>${W.name} — what to accomplish</h2>
+    <p class="cap">${W.intro} Tick off what you've genuinely experienced — progress is saved in this browser.</p>
+    <div class="pbar"><div id="gprog"></div></div><div class="hint" id="gprogtxt"></div></div>`);
+  view.appendChild(head);
+  const updateProg = ()=>{
+    const p=guideProgress(W.tapes);
+    document.getElementById('gprog').style.width=(p.total?100*p.done/p.total:0)+'%';
+    document.getElementById('gprogtxt').textContent=`${p.done} of ${p.total} practice goals checked · ${W.tag}`;
+  };
+
+  view.appendChild(el(`<div class="gcard"><h3>Before every session</h3>
+    <div class="meta">Setup &amp; routine</div>
+    <ul class="prep">${W.prep.map(p=>`<li>${p}</li>`).join('')}</ul></div>`));
+
+  W.tapes.forEach((g,gi)=>{
+    const takes = DATA.sessions.filter(s=>s.label.includes(g.tape))
+                               .sort((a,b)=>(a.take||1)-(b.take||1));
+    const sess = takes.length ? takes[takes.length-1] : null;   // latest take
+    const status = sess
+      ? `<span class="pill good">recorded ${sess.date}${takes.length>1?` · ${takes.length} takes`:''}</span>`
+      : (firstUnrecorded[gi] ? `<span class="pill ok">not yet recorded — next up</span>`
+                             : `<span class="pill bad">not yet recorded</span>`);
+    const card = el(`<div class="gcard">
+      <h3>#${gi+1} — ${g.tape} ${status}</h3>
+      <div class="meta">${sess ? `${sess.summary.duration_min} min · depth ${fmtPct(sess.summary.depth_mean)} · HR ${sess.summary.hr_mean} bpm` : 'record it, re-run process.py, and it appears here'}</div>
+      <p class="desc">${g.desc}</p></div>`);
+    card.appendChild(checklistEl(g.tape, g.goals, updateProg));
+    card.appendChild(el(`<div class="hint" style="margin-top:8px">📈 On your EEG: ${g.eeg}</div>`));
+    view.appendChild(card);
+  });
+
+  const faq = el(`<div class="gcard"><h3>Troubleshooting (from the manual's FAQ)</h3><div style="margin-top:8px"></div></div>`);
+  W.faqs.forEach(([q,a])=>faq.appendChild(el(`<details class="faq"><summary>${q}</summary><p>${a}</p></details>`)));
+  view.appendChild(faq);
+
+  view.appendChild(el(`<div class="note" style="margin-top:18px"><b>Moving on.</b> ${W.closing}</div>`));
+  updateProg();
+}
+
+// ------- shell -------
+function buildTabs(){
+  const tabs=document.getElementById('tabs'); tabs.innerHTML='';
+  const add=(key,label)=>{
+    const b=el(`<button class="tab" role="tab" data-i="${key}" aria-selected="false"
+      tabindex="-1" aria-controls="view">${label}</button>`);
+    b.addEventListener('click',()=>{ if(key==='guide') guideWave=latestRecordedWave(); select(key); });
+    tabs.appendChild(b); return b;
+  };
+  DATA.sessions.forEach((s,i)=>add(String(i), s.takes_total>1 ? `${s.label} · take ${s.take}` : s.label));
+  add('cmp','▣ Compare all sessions');
+  add('guide','✦ Gateway Guide');
+
+  // roving-tabindex arrow-key navigation (WAI-ARIA tabs pattern)
+  tabs.addEventListener('keydown',e=>{
+    const list=[...tabs.querySelectorAll('.tab')];
+    let idx=list.indexOf(document.activeElement);
+    if(idx<0) return;
+    if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+      e.preventDefault();
+      idx=(idx+(e.key==='ArrowRight'?1:-1)+list.length)%list.length;
+      list[idx].focus();
+    } else if(e.key==='Home'){ e.preventDefault(); list[0].focus(); }
+    else if(e.key==='End'){ e.preventDefault(); list[list.length-1].focus(); }
+  });
+}
+function select(i, opts={}){
+  const tabs=[...document.querySelectorAll('#tabs .tab')];
+  tabs.forEach(t=>{
+    const on = t.dataset.i==i;
+    t.setAttribute('aria-selected', on?'true':'false');
+    t.tabIndex = on?0:-1;
+  });
+  if(i==='cmp') renderCompare(); else if(i==='guide') renderGuide(); else renderSession(DATA.sessions[i]);
+  if(opts.focus){ const t=tabs.find(t=>t.dataset.i==i); if(t) t.focus(); }
+  if(!opts.noScroll) window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// deep link: ?session=<id> or ?ep=<episode_n> selects that tape's session
+function sessionIndexFromURL(){
+  const q=new URLSearchParams(location.search);
+  const id=q.get('session'), ep=q.get('ep');
+  if(id){ const i=DATA.sessions.findIndex(s=>s.id===id); if(i>=0) return i; }
+  if(ep){ const i=DATA.sessions.findIndex(s=>String(s.episode_n)===String(ep)); if(i>=0) return i; }
+  return 0;
+}
+
+function init(){
+  if(window.__noData || !DATA || !DATA.sessions || !DATA.sessions.length){
+    document.getElementById('subtitle').textContent='No data loaded';
+    document.getElementById('view').innerHTML =
+      '<div class="err">Could not find <code>dashboard_data.js</code>.<br>'+
+      'Run <code>python process.py</code>, then refresh.</div>';
+    return;
+  }
+  const n=DATA.sessions.length;
+  document.getElementById('subtitle').innerHTML =
+    `${n} session${n>1?'s':''} · generated ${DATA.generated} · `+
+    `Muse S Athena via Mind Monitor (TP9·AF7·AF8·TP10 + PPG heart rate)`;
+  buildTabs();
+  select(String(sessionIndexFromURL()));
+}
+init();
+</script>
+</body>
+</html>
