@@ -1,0 +1,9 @@
+# Keep shell launchers LF so they run on macOS/Linux even when committed from Windows
+*.command text eol=lf
+*.sh      text eol=lf
+process.py text eol=lf
+
+# Treat these as binary (no line-ending munging)
+*.png binary
+*.zip binary
+*.svg binary
