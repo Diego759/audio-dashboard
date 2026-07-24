@@ -48,12 +48,13 @@ RECORDINGS_DIRS = [p for p in (os.environ.get("GATEWAY_RECORDINGS")
 # and repeat takes are a one-line pin.
 # ---------------------------------------------------------------------------
 SESSION_TAPES = {
-    # EEG Visualizer captures — second take of Intro to Focus 10.
-    # (Orientation take 2, session_20260721_182221, was deleted 2026-07-23:
-    #  the Muse BLE stream dropped ~15 min in and recorded nothing for the
-    #  remaining ~17.5 min, so the "meditation depth" after that point was
-    #  dead air, not real data.)
+    # EEG Visualizer captures.
+    # (An earlier Orientation retake, session_20260721_182221, was deleted
+    #  2026-07-23: the Muse BLE stream dropped ~15 min in and recorded nothing
+    #  for the remaining ~17.5 min, so the "meditation depth" after that point
+    #  was dead air, not real data.)
     "session_20260722_181311": "Wave 1 – Introduction to Focus 10",
+    "session_20260723_182956": "Wave 1 – Orientation",
 }
 
 SESSION_LABELS = {
