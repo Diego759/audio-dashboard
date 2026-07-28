@@ -14,3 +14,4 @@ __pycache__/
 *.m4a
 *.aac
 *.ogg
+session_tapes.json

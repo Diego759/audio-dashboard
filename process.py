@@ -10,8 +10,10 @@ Gateway-relevant metrics, and writes `dashboard_data.js` (+ a small
 
 Add a new tape:  drop its recording into `recordings/` and re-run:
     python3 process.py          (macOS/Linux)   or   python process.py  (Windows)
-then refresh the dashboard in the browser. A desktop `session_*.csv` also needs a
-one-line pin in SESSION_TAPES below (that's how repeat takes work).
+then refresh the dashboard in the browser.  A desktop `session_*.csv` needs to be
+tied to a tape — the script ASKS you which one and remembers the answer in
+session_tapes.json, so you never have to edit this file.  Pick a tape you already
+recorded to add a second take of it.
 
 Optional environment overrides (rarely needed):
     GATEWAY_LIBRARY     folder to write dashboard_data.js / eeg_index.js into
@@ -46,6 +48,10 @@ RECORDINGS_DIRS = [p for p in (os.environ.get("GATEWAY_RECORDINGS")
 #      tape from this list by chronological recording order.
 # So future tapes auto-label themselves the moment you drop them in & re-run,
 # and repeat takes are a one-line pin.
+#
+# You do NOT need to edit this file to add a recording: just run the script and
+# it will ASK which tape any new desktop `session_*.csv` belongs to, saving your
+# answer to session_tapes.json (see PINS_FILE below).
 # ---------------------------------------------------------------------------
 SESSION_TAPES = {
     # EEG Visualizer captures.
@@ -56,6 +62,45 @@ SESSION_TAPES = {
     "session_20260722_181311": "Wave 1 – Introduction to Focus 10",
     "session_20260723_182956": "Wave 1 – Orientation",
 }
+
+# Pins added interactively are stored here so you never have to edit code.
+# Format: {"session_20260805_190000": "Wave 1 – Advanced Focus 10",
+#          "session_20260722_095220": null}   <- null = ignore this file
+PINS_FILE = os.path.join(HERE, "session_tapes.json")
+
+
+def load_pins():
+    """Built-in SESSION_TAPES merged with session_tapes.json (the file wins).
+
+    A value of None/null means "permanently ignore this recording" (handy for
+    a few-second test capture you don't want in the dashboard)."""
+    pins = dict(SESSION_TAPES)
+    try:
+        with open(PINS_FILE, encoding="utf-8") as fh:
+            saved = json.load(fh)
+        if isinstance(saved, dict):
+            pins.update(saved)
+    except FileNotFoundError:
+        pass
+    except (ValueError, OSError) as exc:
+        print(f"  (!) could not read {os.path.basename(PINS_FILE)}: {exc}")
+    return pins
+
+
+def save_pin(key, tape):
+    """Persist one recording -> tape assignment (tape=None means ignore)."""
+    saved = {}
+    try:
+        with open(PINS_FILE, encoding="utf-8") as fh:
+            loaded = json.load(fh)
+        if isinstance(loaded, dict):
+            saved = loaded
+    except (FileNotFoundError, ValueError, OSError):
+        pass
+    saved[key] = tape
+    with open(PINS_FILE, "w", encoding="utf-8") as fh:
+        json.dump(saved, fh, ensure_ascii=False, indent=2, sort_keys=True)
+        fh.write("\n")
 
 SESSION_LABELS = {
     "2026-05-26": ("Wave 1 – Orientation", 1),
@@ -203,13 +248,18 @@ def iter_rows(path):
             yield from csv.DictReader(fh)
 
 
-def collect_sources():
-    """Return list of (key, path) preferring .csv over .zip for same recording.
+def collect_sources(pins):
+    """Return (sources, unassigned).
+
+    `sources` is a list of (key, path) preferring .csv over .zip for the same
+    recording.  `unassigned` lists desktop session_*.csv files that have no pin
+    yet — main() offers to assign those interactively.
 
     Scans every folder in RECORDINGS_DIRS (plus an optional `extracted/`
     subfolder of each) for phone `mindMonitor_*` files and desktop
     `session_*.csv` files."""
     found = {}
+    unassigned = []
     for base in RECORDINGS_DIRS:
         for path in glob.glob(os.path.join(base, "mindMonitor_*.csv")) + \
                     glob.glob(os.path.join(base, "extracted", "mindMonitor_*.csv")) + \
@@ -221,15 +271,91 @@ def collect_sources():
             found[key] = path
 
         # EEG Visualizer for Muse writes session_*.csv.  Only pick up the ones
-        # explicitly pinned to a tape in SESSION_TAPES — this keeps stray
-        # test-capture files (e.g. a few-second synthetic run) out of the
-        # dashboard.
-        for path in glob.glob(os.path.join(base, "session_*.csv")):
+        # assigned to a tape — this keeps stray test-capture files (e.g. a
+        # few-second synthetic run) out of the dashboard.  Anything unassigned
+        # is reported rather than silently skipped.
+        for path in sorted(glob.glob(os.path.join(base, "session_*.csv"))):
             key = os.path.splitext(os.path.basename(path))[0]
-            if key in SESSION_TAPES:
-                found.setdefault(key, path)
+            if key in pins:
+                if pins[key]:                     # None => explicitly ignored
+                    found.setdefault(key, path)
+            elif not any(k == key for k, _ in unassigned):
+                unassigned.append((key, path))
 
-    return sorted(found.items(), key=lambda kv: kv[0])
+    return sorted(found.items(), key=lambda kv: kv[0]), unassigned
+
+
+def describe_recording(path):
+    """One-line 'what is this file' summary to help identify a new recording."""
+    try:
+        first = last = None
+        n = 0
+        for row in iter_rows(path):
+            ts = row.get("TimeStamp")
+            if not ts:
+                continue
+            if first is None:
+                first = ts
+            last = ts
+            n += 1
+        if first is None:
+            return "empty / unreadable"
+        mins = (parse_ts(last) - parse_ts(first)).total_seconds() / 60.0
+        return f"recorded {parse_ts(first).strftime('%Y-%m-%d %H:%M')}, {mins:.0f} min, {n} rows"
+    except Exception as exc:                       # never block on a bad file
+        return f"(could not read: {exc})"
+
+
+def assign_unassigned(unassigned):
+    """Ask which tape each new desktop recording belongs to; save the answers.
+
+    Runs only on an interactive terminal.  Otherwise it prints instructions and
+    leaves the files out of the dashboard (unchanged, safe default)."""
+    interactive = sys.stdin is not None and sys.stdin.isatty()
+
+    print()
+    print("Found %d new recording(s) not yet assigned to a tape:" % len(unassigned))
+    for key, path in unassigned:
+        print(f"  - {key}.csv  ({describe_recording(path)})")
+
+    if not interactive:
+        print()
+        print("Not running in an interactive terminal, so they were skipped.")
+        print("Run `python3 process.py` from a terminal to assign them, or add")
+        print(f"them to {os.path.basename(PINS_FILE)} manually, e.g.:")
+        print('  { "%s": "%s" }' % (unassigned[0][0], TAPE_SEQUENCE[0]))
+        return False
+
+    changed = False
+    for key, path in unassigned:
+        print()
+        print(f"Which tape is  {key}.csv  ({describe_recording(path)})?")
+        for i, tape in enumerate(TAPE_SEQUENCE, 1):
+            print(f"  {i:2d}) {tape}")
+        print("   s) skip for now (ask again next time)")
+        print("   x) ignore this file permanently (e.g. a test capture)")
+
+        while True:
+            try:
+                ans = input("Enter a number, s, or x: ").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                print("\nSkipped.")
+                return changed
+            if ans == "s":
+                break
+            if ans == "x":
+                save_pin(key, None)
+                print(f"  -> ignoring {key}.csv from now on.")
+                changed = True
+                break
+            if ans.isdigit() and 1 <= int(ans) <= len(TAPE_SEQUENCE):
+                tape = TAPE_SEQUENCE[int(ans) - 1]
+                save_pin(key, tape)
+                print(f"  -> {key}.csv = {tape}")
+                changed = True
+                break
+            print("  Sorry, didn't get that.")
+    return changed
 
 
 def moving_avg(xs, win):
@@ -403,7 +529,16 @@ def main():
     except Exception:
         pass
 
-    sources = collect_sources()
+    pins = load_pins()
+    sources, unassigned = collect_sources(pins)
+
+    # A new desktop recording needs to be tied to a tape — ask, don't skip.
+    if unassigned:
+        if assign_unassigned(unassigned):
+            pins = load_pins()
+            sources, unassigned = collect_sources(pins)
+        print()
+
     if not sources:
         print("No recordings found in:", ", ".join(RECORDINGS_DIRS))
         print("Drop mindMonitor_*.zip/.csv or session_*.csv files there and re-run.")
@@ -417,11 +552,11 @@ def main():
             print("  (no band data, skipped)")
             continue
         # Tape assignment priority:
-        #   1) SESSION_TAPES[key]   - per-recording pin (this is what lets one
+        #   1) pins[key]            - per-recording pin (this is what lets one
         #                             tape hold more than one take)
         #   2) SESSION_LABELS[date] - legacy per-date pin
         #   3) positional fallback  - assigned after sorting, below
-        label = SESSION_TAPES.get(key)
+        label = pins.get(key)
         if not label:
             label = SESSION_LABELS.get(data["date"], (None,))[0]
         sessions.append({

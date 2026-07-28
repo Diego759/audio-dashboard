@@ -58,21 +58,40 @@ Then refresh the browser.
 
 ### Adding a new recording
 
-1. Drop the recording into **`recordings/`**:
-   - **Phone Mind Monitor** → `mindMonitor_*.zip` (or `.csv`). Auto-labelled to
-     the next tape in sequence by its recording date.
-   - **Desktop EEG Visualizer for Muse** → `session_*.csv`. These must be
-     **pinned** to a tape (see next step) — that's also how you keep more than
-     one take of the same tape.
-2. If it's a `session_*.csv`, add one line to `SESSION_TAPES` near the top of
-   `process.py`, keyed by the filename without extension, e.g.:
-   ```python
-   SESSION_TAPES = {
-       "session_20260722_181311": "Wave 1 – Introduction to Focus 10",
-       "session_20260805_190000": "Wave 1 – Advanced Focus 10",  # new take
-   }
-   ```
-3. Re-run `python3 process.py` and refresh.
+**No code editing needed.** Two steps:
+
+1. Copy the recording into the **`recordings/`** folder:
+   - **Phone Mind Monitor** → `mindMonitor_*.zip` (or `.csv`)
+   - **Desktop EEG Visualizer for Muse** → `session_*.csv`
+2. Run `python3 process.py` from a terminal, then refresh the browser.
+
+For a desktop `session_*.csv`, the script needs to know which tape it was, so it
+**asks** — just type a number:
+
+```
+Found 1 new recording(s) not yet assigned to a tape:
+  - session_20260805_190000.csv  (recorded 2026-08-05 19:00, 33 min, 1933 rows)
+
+Which tape is  session_20260805_190000.csv?
+   1) Wave 1 – Orientation
+   2) Wave 1 – Introduction to Focus 10
+   3) Wave 1 – Advanced Focus 10
+   ...
+   s) skip for now (ask again next time)
+   x) ignore this file permanently (e.g. a test capture)
+Enter a number, s, or x: 3
+  -> session_20260805_190000.csv = Wave 1 – Advanced Focus 10
+```
+
+Your answer is saved in **`session_tapes.json`**, so you're only asked once.
+Picking a tape you've already recorded is exactly how you add a **second take** —
+the dashboard then shows both and overlays them for comparison.
+
+Phone `mindMonitor_*` recordings don't need this; they're auto-labelled to the
+next tape in sequence by recording date.
+
+> Editing `session_tapes.json` by hand works too — it's a simple
+> `{"file-id": "Tape name"}` map, where `null` means "ignore this file".
 
 ### Optional environment overrides
 
