@@ -173,7 +173,16 @@
   <div id="view" role="tabpanel" tabindex="-1" aria-label="Selected view"></div>
 </main>
 
-<script src="dashboard_data.js" onerror="window.__noData=true"></script>
+<script>
+  // Load the generated data with a cache-buster: python's http.server sends no
+  // cache headers, so without this the browser keeps serving the OLD
+  // dashboard_data.js and a re-run of process.py appears to do nothing.
+  (function(){
+    var bust = (location.protocol.indexOf('http')===0) ? ('?v='+Date.now()) : '';
+    document.write('<scr'+'ipt src="dashboard_data.js'+bust+
+                   '" onerror="window.__noData=true"><\/scr'+'ipt>');
+  })();
+</script>
 <script>
 const C = {delta:'--delta',theta:'--theta',alpha:'--alpha',beta:'--beta',gamma:'--gamma'};
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
