@@ -77,11 +77,28 @@ Which tape is  session_20260805_190000.csv?
    2) Wave 1 – Introduction to Focus 10
    3) Wave 1 – Advanced Focus 10
    ...
+   t) enter the tape name
    s) skip for now (ask again next time)
    x) ignore this file permanently (e.g. a test capture)
-Enter a number, s, or x: 3
+Enter a number, t, s, or x: 3
   -> session_20260805_190000.csv = Wave 1 – Advanced Focus 10
 ```
+
+Press **`t`** to type the name instead of picking a number. Matching is forgiving —
+a plain hyphen works instead of the en-dash, the `Wave N` prefix is optional, and
+common shorthands are understood, so all of these find the same tape:
+
+```
+Wave 1 – Introduction to Focus 10
+Wave 1 - Introduction to Focus 10
+introduction to focus 10
+intro to focus 10
+```
+
+If what you type matches several tapes it lists them and asks again; the canonical
+name is always what gets stored. A name that isn't a standard Wave 1/2 tape (say a
+Wave 3 exercise) is allowed after a confirmation — it's analysed normally, but it
+can't link to a Library tape or show that tape's guide.
 
 Your answer is saved in **`session_tapes.json`**, so you're only asked once.
 Picking a tape you've already recorded is exactly how you add a **second take** —

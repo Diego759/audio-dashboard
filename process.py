@@ -22,7 +22,7 @@ Optional environment overrides (rarely needed):
                         (default: ./recordings next to this script)
 """
 
-import csv, glob, io, json, math, os, statistics, sys, zipfile
+import csv, glob, io, json, math, os, re, statistics, sys, zipfile
 from collections import defaultdict
 from datetime import datetime
 
@@ -306,6 +306,61 @@ def describe_recording(path):
         return f"(could not read: {exc})"
 
 
+# Shorthands people actually type for the tape titles.
+_TAPE_ALIASES = {r"\bintro\b": "introduction", r"\brelease & recharge\b": "release and recharge",
+                 r"\bff10\b": "free flow 10", r"\bebt\b": "energy bar tool"}
+
+
+def _norm_tape(s):
+    """Loose form for comparing tape names: lowercase, any dash -> '-', tidy space."""
+    s = s.strip().lower()
+    for dash in ("—", "–", "--"):        # em dash, en dash, double hyphen
+        s = s.replace(dash, "-")
+    for pat, repl in _TAPE_ALIASES.items():
+        s = re.sub(pat, repl, s)
+    return " ".join(s.split())
+
+
+def _loose_tape(s):
+    """As _norm_tape but dashes become spaces, so 'one month' == 'One-Month'."""
+    return " ".join(_norm_tape(s).replace("-", " ").split())
+
+
+def resolve_tape_name(text):
+    """Turn typed text into a canonical tape name from TAPE_SEQUENCE.
+
+    Forgiving about the en-dash (typing a plain '-' is fine), about common
+    shorthands ("intro to focus 10"), and about typing only the short title, so
+    "orientation", "Wave 1 - Orientation" and "Wave 1 – Orientation" all resolve
+    to the canonical label.
+
+    Returns (canonical_name, candidates).  If canonical_name is None, either
+    nothing matched (candidates empty) or it was ambiguous (candidates lists the
+    possibilities)."""
+    want, want_loose = _norm_tape(text), _loose_tape(text)
+    if not want:
+        return None, []
+
+    # 1) full-name match
+    for tape in TAPE_SEQUENCE:
+        if _norm_tape(tape) == want or _loose_tape(tape) == want_loose:
+            return tape, []
+
+    # 2) match on the short title after the "Wave N - " prefix
+    exact, partial = [], []
+    for tape in TAPE_SEQUENCE:
+        short = _norm_tape(tape).split("-", 1)[-1].strip()
+        short_loose = " ".join(short.replace("-", " ").split())
+        if want in (short,) or want_loose == short_loose:
+            exact.append(tape)
+        elif want in _norm_tape(tape) or want_loose in _loose_tape(tape):
+            partial.append(tape)
+    hits = exact or partial
+    if len(hits) == 1:
+        return hits[0], []
+    return None, hits
+
+
 def assign_unassigned(unassigned):
     """Ask which tape each new desktop recording belongs to; save the answers.
 
@@ -332,12 +387,13 @@ def assign_unassigned(unassigned):
         print(f"Which tape is  {key}.csv  ({describe_recording(path)})?")
         for i, tape in enumerate(TAPE_SEQUENCE, 1):
             print(f"  {i:2d}) {tape}")
+        print("   t) enter the tape name")
         print("   s) skip for now (ask again next time)")
         print("   x) ignore this file permanently (e.g. a test capture)")
 
         while True:
             try:
-                ans = input("Enter a number, s, or x: ").strip().lower()
+                ans = input("Enter a number, t, s, or x: ").strip().lower()
             except (EOFError, KeyboardInterrupt):
                 print("\nSkipped.")
                 return changed
@@ -348,6 +404,15 @@ def assign_unassigned(unassigned):
                 print(f"  -> ignoring {key}.csv from now on.")
                 changed = True
                 break
+            if ans == "t":
+                tape = prompt_tape_name()
+                if tape is None:            # cancelled -> back to the menu
+                    print("  (cancelled)")
+                    continue
+                save_pin(key, tape)
+                print(f"  -> {key}.csv = {tape}")
+                changed = True
+                break
             if ans.isdigit() and 1 <= int(ans) <= len(TAPE_SEQUENCE):
                 tape = TAPE_SEQUENCE[int(ans) - 1]
                 save_pin(key, tape)
@@ -356,6 +421,45 @@ def assign_unassigned(unassigned):
                 break
             print("  Sorry, didn't get that.")
     return changed
+
+
+def prompt_tape_name():
+    """Ask the user to type a tape name.  Returns a name, or None to cancel.
+
+    Typed text is matched against the known tapes so the canonical label (with
+    its en-dash) is stored — that's what links a session to its Library episode
+    and its guide.  A name that matches nothing can still be used, but the
+    consequences are spelled out first."""
+    while True:
+        try:
+            raw = input("  Tape name (blank to cancel): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return None
+        if not raw:
+            return None
+
+        tape, candidates = resolve_tape_name(raw)
+        if tape:
+            if _norm_tape(tape) != _norm_tape(raw):
+                print(f"  Matched known tape: {tape}")
+            return tape
+
+        if candidates:
+            print("  That matches several tapes — please be more specific:")
+            for c in candidates:
+                print(f"    - {c}")
+            continue
+
+        # Not a known tape: allow it, but say what won't work.
+        print(f'  "{raw}" is not one of the standard Wave 1/2 tapes.')
+        print("  It will still be analysed, but it won't link to a Library tape")
+        print("  or show that tape's guide/checklist.")
+        try:
+            ok = input("  Use this name anyway? [y/N]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            return None
+        if ok in ("y", "yes"):
+            return raw
 
 
 def moving_avg(xs, win):
