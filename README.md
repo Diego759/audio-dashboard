@@ -100,7 +100,20 @@ name is always what gets stored. A name that isn't a standard Wave 1/2 tape (say
 Wave 3 exercise) is allowed after a confirmation — it's analysed normally, but it
 can't link to a Library tape or show that tape's guide.
 
-Your answer is saved in **`session_tapes.json`**, so you're only asked once.
+It then asks which app you listened on:
+
+```
+  Played on which app? (e.g. Expand — blank for the Library): Expand
+  -> session_20260805_190000.csv = Wave 1 – Advanced Focus 10  (Expand)
+```
+
+Leave it blank for the FLAC Library (the default). Naming an app — the Monroe
+**Expand** app, for instance — tags that session throughout the dashboard: in its
+tab, its heading, the take switcher, the comparison chart legend, and the compare
+view. The tape name itself stays canonical, so the session still counts as a take
+of that tape and keeps its Library link and guide.
+
+Your answers are saved in **`session_tapes.json`**, so you're only asked once.
 Picking a tape you've already recorded is exactly how you add a **second take** —
 the dashboard then shows both and overlays them for comparison.
 

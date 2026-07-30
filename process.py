@@ -11,9 +11,10 @@ Gateway-relevant metrics, and writes `dashboard_data.js` (+ a small
 Add a new tape:  drop its recording into `recordings/` and re-run:
     python3 process.py          (macOS/Linux)   or   python process.py  (Windows)
 then refresh the dashboard in the browser.  A desktop `session_*.csv` needs to be
-tied to a tape — the script ASKS you which one and remembers the answer in
+tied to a tape — the script ASKS you which one (pick a number, or `t` to type the
+name) plus which app you played it on, and remembers the answers in
 session_tapes.json, so you never have to edit this file.  Pick a tape you already
-recorded to add a second take of it.
+recorded to add another take of it.
 
 Optional environment overrides (rarely needed):
     GATEWAY_LIBRARY     folder to write dashboard_data.js / eeg_index.js into
@@ -61,12 +62,32 @@ SESSION_TAPES = {
     #  was dead air, not real data.)
     "session_20260722_181311": "Wave 1 – Introduction to Focus 10",
     "session_20260723_182956": "Wave 1 – Orientation",
+    "session_20260729_180933": "Wave 1 – Introduction to Focus 10",   # Expand app
+}
+
+# Which app/player a tape was listened to on, when it wasn't the FLAC Library —
+# shown next to the session in the dashboard so takes of the same tape from
+# different sources are easy to tell apart.
+SESSION_SOURCE = {
+    "session_20260729_180933": "Expand",     # Monroe's Expand app
 }
 
 # Pins added interactively are stored here so you never have to edit code.
 # Format: {"session_20260805_190000": "Wave 1 – Advanced Focus 10",
+#          "session_20260806_190000": {"tape": "Wave 1 – Orientation",
+#                                      "source": "Expand"},
 #          "session_20260722_095220": null}   <- null = ignore this file
 PINS_FILE = os.path.join(HERE, "session_tapes.json")
+
+
+def pin_parts(value):
+    """Split a pin into (tape, source).
+
+    A pin is either a plain tape name, None (= ignore this recording), or an
+    object like {"tape": "...", "source": "Expand"}."""
+    if isinstance(value, dict):
+        return value.get("tape"), value.get("source")
+    return value, None
 
 
 def load_pins():
@@ -87,7 +108,7 @@ def load_pins():
     return pins
 
 
-def save_pin(key, tape):
+def save_pin(key, tape, source=None):
     """Persist one recording -> tape assignment (tape=None means ignore)."""
     saved = {}
     try:
@@ -97,7 +118,7 @@ def save_pin(key, tape):
             saved = loaded
     except (FileNotFoundError, ValueError, OSError):
         pass
-    saved[key] = tape
+    saved[key] = {"tape": tape, "source": source} if (tape and source) else tape
     with open(PINS_FILE, "w", encoding="utf-8") as fh:
         json.dump(saved, fh, ensure_ascii=False, indent=2, sort_keys=True)
         fh.write("\n")
@@ -277,7 +298,7 @@ def collect_sources(pins):
         for path in sorted(glob.glob(os.path.join(base, "session_*.csv"))):
             key = os.path.splitext(os.path.basename(path))[0]
             if key in pins:
-                if pins[key]:                     # None => explicitly ignored
+                if pin_parts(pins[key])[0]:       # None => explicitly ignored
                     found.setdefault(key, path)
             elif not any(k == key for k, _ in unassigned):
                 unassigned.append((key, path))
@@ -409,18 +430,29 @@ def assign_unassigned(unassigned):
                 if tape is None:            # cancelled -> back to the menu
                     print("  (cancelled)")
                     continue
-                save_pin(key, tape)
-                print(f"  -> {key}.csv = {tape}")
-                changed = True
-                break
-            if ans.isdigit() and 1 <= int(ans) <= len(TAPE_SEQUENCE):
+            elif ans.isdigit() and 1 <= int(ans) <= len(TAPE_SEQUENCE):
                 tape = TAPE_SEQUENCE[int(ans) - 1]
-                save_pin(key, tape)
-                print(f"  -> {key}.csv = {tape}")
-                changed = True
-                break
-            print("  Sorry, didn't get that.")
+            else:
+                print("  Sorry, didn't get that.")
+                continue
+
+            source = prompt_source()
+            save_pin(key, tape, source)
+            print(f"  -> {key}.csv = {tape}" + (f"  ({source})" if source else ""))
+            changed = True
+            break
     return changed
+
+
+def prompt_source():
+    """Optionally record which app the tape was played on (e.g. the Expand app).
+
+    Blank = the FLAC Library, which is the default and needs no label."""
+    try:
+        raw = input("  Played on which app? (e.g. Expand — blank for the Library): ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return None
+    return raw or None
 
 
 def prompt_tape_name():
@@ -660,12 +692,13 @@ def main():
         #                             tape hold more than one take)
         #   2) SESSION_LABELS[date] - legacy per-date pin
         #   3) positional fallback  - assigned after sorting, below
-        label = pins.get(key)
+        label, source = pin_parts(pins.get(key))
         if not label:
             label = SESSION_LABELS.get(data["date"], (None,))[0]
         sessions.append({
             "id": key,
             "label": label,            # explicit pin, or None -> filled below
+            "source": source or SESSION_SOURCE.get(key),   # app it was played on
             "file": os.path.basename(path),
             **data,                    # date, samples, events, summary
         })
@@ -718,6 +751,7 @@ def main():
     def brief(s):
         sm = s["summary"]
         return {"id": s["id"], "date": s["date"], "take": s.get("take", 1),
+                "source": s.get("source"),
                 "depth": sm["depth_mean"], "hr": sm["hr_mean"],
                 "signal": sm["signal_good_pct"], "dur": sm["duration_min"]}
 
@@ -748,8 +782,9 @@ def main():
         sm = s["summary"]
         ep = s.get("episode_n")
         take = f" [take {s['take']}/{s['takes_total']}]" if s.get("takes_total", 1) > 1 else ""
+        src = f" <{s['source']}>" if s.get("source") else ""
         fmt = "" if s.get("band_format") == "log" else f" ({s['band_format']} bands)"
-        print(f"  - {s['label']}{take}{fmt}: {sm['duration_min']} min, "
+        print(f"  - {s['label']}{take}{src}{fmt}: {sm['duration_min']} min, "
               f"HR~{sm['hr_mean']}, signal {sm['signal_good_pct']}% good, "
               f"alpha {sm['rel_mean']['alpha']*100:.0f}% / theta {sm['rel_mean']['theta']*100:.0f}%"
               f"{'  -> tape #'+str(ep) if ep else ''}")

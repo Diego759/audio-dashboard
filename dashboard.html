@@ -353,6 +353,9 @@ const ckGet = (tape,i) => localStorage.getItem(ckKey(tape,i)) === '1';
 const ckSet = (tape,i,v) => localStorage.setItem(ckKey(tape,i), v?'1':'0');
 function guideFor(label){ return ALL_TAPES.find(g => label.includes(g.tape)) || null; }
 function waveOf(label){ const m=/Wave\s*(\d+)/.exec(label); return m?+m[1]:1; }
+// which app the tape was played on (e.g. "Expand"); blank = the FLAC Library
+function srcOf(s){ return s && s.source ? s.source : ''; }
+function srcSuffix(s, sep=' · '){ const v=srcOf(s); return v?sep+v:''; }
 function latestRecordedWave(){
   let w=1; (DATA?.sessions||[]).forEach(s=>{ w=Math.max(w, waveOf(s.label)); });
   return WAVES[w] ? w : 1;
@@ -468,7 +471,7 @@ function renderSession(s){
   if(sibs.length>1){
     const short = s.label.replace(/Wave \d+ – /,'');
     const panel = el(`<div class="panel">
-      <h2>Your takes of “${short}” — take ${s.take} of ${sibs.length}</h2>
+      <h2>Your takes of “${short}” — take ${s.take} of ${sibs.length}${srcSuffix(s,' · ')}</h2>
       <p class="cap">Same tape, recorded on different days. Switch takes below; the chart overlays
         <b style="color:var(--alpha)">meditation depth (θ+α)</b> across every take — a rise over time means
         you're reaching Focus 10 more deeply.</p>
@@ -478,7 +481,7 @@ function renderSession(s){
     const sw = panel.querySelector('#takeswitch');
     sibs.forEach(x=>{
       const cur = x.id===s.id;
-      const b = el(`<button class="tab${cur?' active':''}"${cur?' aria-current="true"':''}>take ${x.take} · ${x.date}</button>`);
+      const b = el(`<button class="tab${cur?' active':''}"${cur?' aria-current="true"':''}>take ${x.take} · ${x.date}${srcSuffix(x,' · ')}</button>`);
       if(!cur) b.addEventListener('click',()=>select(String(DATA.sessions.indexOf(x))));
       sw.appendChild(b);
     });
@@ -490,7 +493,7 @@ function renderSession(s){
     <input type="range" id="sm" min="1" max="120" value="${pickWin(sm.n)}"
       aria-label="Chart smoothing window">
     <span id="smv" class="hint"></span>
-    <span class="hint" style="margin-left:auto">recorded ${s.date} · ${s.file}</span>
+    <span class="hint" style="margin-left:auto">recorded ${s.date}${srcSuffix(s,' · ')} · ${s.file}</span>
   </div>`));
 
   // panels
@@ -591,7 +594,7 @@ function renderSession(s){
         const L=stride(x.samples.map(p=>p.t/60), xs);
         const ys=stride(smooth(x.samples.map(p=>p.depth), w), xs);
         const cur=x.id===s.id;
-        return {label:`take ${x.take} · ${x.date}`, data:ys.map((y,k)=>({x:L[k],y})),
+        return {label:`take ${x.take} · ${x.date}${srcSuffix(x,' · ')}`, data:ys.map((y,k)=>({x:L[k],y})),
           borderColor:palette[i%palette.length], backgroundColor:palette[i%palette.length]+'22',
           borderWidth:cur?3:1.6, borderDash:cur?[]:[5,4], fill:false};
       });
@@ -618,7 +621,8 @@ function renderCompare(){
   destroyCharts();
   const view=document.getElementById('view'); view.innerHTML='';
   const S=DATA.sessions;
-  const labels=S.map(s=>s.label.replace(/Wave \d+ – /,'') + (s.takes_total>1?` (t${s.take})`:''));
+  const labels=S.map(s=>s.label.replace(/Wave \d+ – /,'') + (s.takes_total>1?` (t${s.take})`:'')
+    + (srcOf(s)?` [${srcOf(s)}]`:''));
 
   view.appendChild(el(`<div class="panel"><h2>Average brain-state mix per tape</h2>
     <p class="cap">Relative power composition. A shift toward alpha/theta over time suggests deepening practice.</p>
@@ -658,7 +662,7 @@ function renderCompare(){
 
   // summary table
   let rows = S.map(s=>{const m=s.summary;return `<tr>
-    <td>${s.label}${s.takes_total>1?` <span class="hint">· take ${s.take}</span>`:''}</td><td>${m.duration_min}</td><td>${m.hr_mean??'–'}</td>
+    <td>${s.label}${s.takes_total>1?` <span class="hint">· take ${s.take}</span>`:''}${srcOf(s)?` <span class="pill ok">${srcOf(s)}</span>`:''}</td><td>${m.duration_min}</td><td>${m.hr_mean??'–'}</td>
     <td>${fmtPct(m.rel_mean.alpha)}</td><td>${fmtPct(m.rel_mean.theta)}</td>
     <td>${fmtPct(m.rel_mean.beta)}</td><td>${fmtPct(m.depth_mean)}</td>
     <td>${m.tbr_mean}</td><td>${m.stillness_pct}%</td><td>${m.signal_good_pct}%</td></tr>`;}).join('');
@@ -761,7 +765,8 @@ function buildTabs(){
     b.addEventListener('click',()=>{ if(key==='guide') guideWave=latestRecordedWave(); select(key); });
     tabs.appendChild(b); return b;
   };
-  DATA.sessions.forEach((s,i)=>add(String(i), s.takes_total>1 ? `${s.label} · take ${s.take}` : s.label));
+  DATA.sessions.forEach((s,i)=>add(String(i),
+    (s.takes_total>1 ? `${s.label} · take ${s.take}` : s.label) + srcSuffix(s,' · ')));
   add('cmp','▣ Compare all sessions');
   add('guide','✦ Gateway Guide');
 
