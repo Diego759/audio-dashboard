@@ -438,9 +438,23 @@ function renderSession(s){
   const sibs = DATA.sessions.filter(x=>x.label===s.label)
                             .sort((a,b)=>(a.take||1)-(b.take||1));
 
+  // the headband stopped sending mid-session: say so, loudly
+  if(sm.stale_min){
+    view.appendChild(el(`<div class="note" style="border-color:var(--bad);
+      background:linear-gradient(90deg,rgba(240,112,143,.12),transparent)">
+      <b>⚠ Recording cut short — ${sm.stale_min} min of this session is not real data.</b><br>
+      The headband stopped sending after <b>${sm.duration_min} min</b>, but the recorder kept
+      writing rows holding the last reading, so ${sm.stale_pct}% of the ${sm.recorded_min}-minute
+      file is a frozen value (it would draw as a dead-flat line). That part has been
+      <b>excluded</b> — every number and chart below uses only the ${sm.duration_min} min of
+      genuine data. Re-record if you want the full tape.
+    </div>`));
+  }
+
   view.appendChild(el(`
     <div class="cards">
-      <div class="card"><div class="k">Duration</div><div class="v">${sm.duration_min}<small> min</small></div></div>
+      <div class="card"><div class="k">Duration</div><div class="v">${sm.duration_min}<small> min</small></div>
+        ${sm.stale_min?`<div class="hint">of ${sm.recorded_min} min recorded</div>`:''}</div>
       <div class="card"><div class="k">Heart rate</div><div class="v">${sm.hr_mean??'–'}<small> bpm</small></div>
         <div class="hint">${sm.hr_min}–${sm.hr_max} bpm</div></div>
       <div class="card"><div class="k">Dominant band</div><div class="v" style="color:${cssv(C[dominant])}">${BAND_INFO[dominant][0]}</div>

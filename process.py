@@ -256,6 +256,60 @@ def band_is_relative(path):
     return checked > 0 and votes_rel >= 0.8 * checked
 
 
+def stale_rows(path, min_run=5, min_seconds=10.0):
+    """Find rows where the recording froze, and how much time they cover.
+
+    If the headband's BLE stream dies mid-session the recorder can keep writing
+    one row per second holding the LAST values it received — timestamps advance
+    but every reading (bands, RAW, accelerometer, HSI, heart rate) is identical.
+    That is not a brain state: it draws as a dead-flat line and, because the
+    stale HSI says "good", it inflates the signal-quality score too.
+
+    A run counts as frozen when at least `min_run` consecutive band rows are
+    byte-identical AND they span at least `min_seconds`.  The first row of a run
+    is kept (it is the last real reading); the repeats are dropped.
+
+    Returns (set_of_row_indices_to_skip, seconds_dropped)."""
+    band = []                                  # (row_index, signature, seconds)
+    t0 = None
+    for i, row in enumerate(iter_rows(path)):
+        if not row.get("Alpha_TP9"):
+            continue
+        ts_raw = row.get("TimeStamp")
+        if not ts_raw:
+            continue
+        try:
+            ts = parse_ts(ts_raw)
+        except ValueError:
+            continue
+        if t0 is None:
+            t0 = ts
+        sig = tuple(row.get(f"{b}_{c}") for b in BANDS for c in CHANNELS)
+        band.append((i, sig, (ts - t0).total_seconds()))
+
+    skip, dropped = set(), 0.0
+    run_start = 0
+    for k in range(1, len(band) + 1):
+        same = k < len(band) and band[k][1] == band[run_start][1]
+        if same:
+            continue
+        n = k - run_start
+        span = band[k - 1][2] - band[run_start][2]
+        if n >= min_run and span >= min_seconds:
+            for j in range(run_start + 1, k):   # keep the first, drop the rest
+                skip.add(band[j][0])
+            dropped += span
+        run_start = k
+
+    # also ignore any non-band rows sitting inside a frozen stretch, so their
+    # stale HSI/battery values don't count toward signal quality
+    if skip:
+        lo, hi = min(skip), max(skip)
+        band_idx = {i for i, _, _ in band}
+        skip |= {i for i in range(lo, hi + 1) if i not in band_idx}
+    return skip, dropped
+
+
 def iter_rows(path):
     """Yield csv.DictReader rows from a .csv or the .csv inside a .zip."""
     if path.lower().endswith(".zip"):
@@ -514,8 +568,11 @@ def process(path):
     start = None
     batteries = []
     is_rel = band_is_relative(path)   # relative-power vs log-power band columns
+    skip, stale_sec = stale_rows(path)   # frozen stretches (dead BLE stream)
 
-    for row in iter_rows(path):
+    for idx, row in enumerate(iter_rows(path)):
+        if idx in skip:
+            continue
         ts_raw = row.get("TimeStamp")
         if not ts_raw:
             continue
@@ -641,6 +698,12 @@ def process(path):
     qtot = sum(hsi_counts.values()) or 1
     summary["signal_good_pct"] = round(100.0 * hsi_counts.get(1, 0) / qtot, 1)
     summary["hsi_counts"] = hsi_counts
+
+    # frozen/dropped-stream time excluded above, surfaced so it can be shown
+    summary["stale_min"] = round(stale_sec / 60.0, 1)
+    total_min = duration_min + stale_sec / 60.0
+    summary["stale_pct"] = round(100.0 * stale_sec / 60.0 / total_min, 1) if total_min else 0.0
+    summary["recorded_min"] = round(total_min, 1)   # wall-clock incl. frozen part
 
     # theta/beta and alpha/theta ratios; meditation depth = theta+alpha relative
     for s in samples:
@@ -784,6 +847,10 @@ def main():
         take = f" [take {s['take']}/{s['takes_total']}]" if s.get("takes_total", 1) > 1 else ""
         src = f" <{s['source']}>" if s.get("source") else ""
         fmt = "" if s.get("band_format") == "log" else f" ({s['band_format']} bands)"
+        if sm.get("stale_min"):
+            print(f"  (!) {s['label']}: dropped {sm['stale_min']} min of frozen data "
+                  f"({sm['stale_pct']}% of the {sm['recorded_min']} min recording) "
+                  f"- the headband stream stopped sending; metrics use the good part only.")
         print(f"  - {s['label']}{take}{src}{fmt}: {sm['duration_min']} min, "
               f"HR~{sm['hr_mean']}, signal {sm['signal_good_pct']}% good, "
               f"alpha {sm['rel_mean']['alpha']*100:.0f}% / theta {sm['rel_mean']['theta']*100:.0f}%"
